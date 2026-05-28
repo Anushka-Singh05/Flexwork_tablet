@@ -1,0 +1,1090 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flexwork - Ongoing Requirement</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        :root {
+            --sidebar-width: 260px;
+            --sidebar-collapsed: 80px;
+        }
+
+        * { box-sizing: border-box; }
+
+        body { overflow: hidden; }
+
+        #sidebar {
+            width: var(--sidebar-width);
+            transition: width 0.3s cubic-bezier(.4,0,.2,1);
+            overflow: hidden;
+        }
+
+        #sidebar.collapsed {
+            width: var(--sidebar-collapsed);
+        }
+
+        .sidebar-label {
+            transition: opacity 0.2s ease, width 0.2s ease;
+            white-space: nowrap;
+            overflow: hidden;
+        }
+
+        #sidebar.collapsed .sidebar-label {
+            opacity: 0;
+            width: 0;
+            pointer-events: none;
+        }
+
+        #sidebar.collapsed .logo-text { display: none; }
+        #sidebar.collapsed .logo-icon-only { display: flex; }
+        .logo-icon-only { display: none; }
+
+        #sidebar.collapsed #services-dropdown { display: none !important; }
+        #sidebar.collapsed .nav-item { justify-content: center; padding-left: 0; padding-right: 0; }
+        #sidebar.collapsed .nav-icon { margin: 0 auto; }
+
+        .dropdown-arrow { transition: transform 0.2s ease; }
+        .dropdown-open .dropdown-arrow { transform: rotate(180deg); }
+
+        /* Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,0.35);
+            z-index: 100;
+            align-items: flex-start;
+            justify-content: flex-end;
+        }
+        .modal-overlay.active { display: flex; }
+        .modal-panel {
+            background: white;
+            width: 55%;
+            min-width: 520px;
+            height: 100vh;
+            overflow-y: auto;
+            padding: 36px 40px;
+            position: relative;
+            box-shadow: -8px 0 40px rgba(0,0,0,0.12);
+            animation: slideIn 0.25s ease;
+        }
+        @keyframes slideIn {
+            from { transform: translateX(30px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        /* Dropdown menu */
+        .action-dropdown {
+            position: fixed;
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+            z-index: 9999;
+            min-width: 170px;
+            display: none;
+        }
+        .action-dropdown.show { display: block; }
+        .action-dropdown a {
+            display: flex; align-items: center; gap: 10px;
+            padding: 9px 14px;
+            font-size: 13px; font-weight: 600;
+            color: #374151; cursor: pointer;
+            transition: background 0.15s;
+        }
+        .action-dropdown a:hover { background: #f8fafc; }
+        .action-dropdown a.danger { color: #ef4444; }
+        .action-dropdown a:first-child { border-radius: 10px 10px 0 0; }
+        .action-dropdown a:last-child { border-radius: 0 0 10px 10px; }
+
+        /* Slot time button */
+        .slot-btn {
+            border-radius: 10px;
+            padding: 14px 16px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s;
+            text-align: left;
+        }
+        .slot-available { background: #f0fdf4; border: 1.5px solid #bbf7d0; color: #166534; }
+        .slot-available:hover { background: #dcfce7; }
+        .slot-available.selected { background: #166534; color: white; border-color: #166534; }
+        .slot-partial { background: #fefce8; border: 1.5px solid #fde68a; color: #92400e; }
+        .slot-soldout { background: #fef2f2; border: 1.5px solid #fecaca; color: #991b1b; cursor: not-allowed; opacity: 0.7; }
+
+        /* Calendar */
+        .cal-day {
+            width: 36px; height: 36px;
+            display: flex; align-items: center; justify-content: center;
+            border-radius: 50%; font-size: 13px; font-weight: 600;
+            cursor: pointer; color: #374151;
+            transition: background 0.15s;
+        }
+        .cal-day:hover { background: #eef2ff; }
+        .cal-day.today { background: #5D5FEF; color: white; }
+        .cal-day.selected { background: #3B41E3; color: white; }
+        .cal-day.disabled { color: #cbd5e1; cursor: default; pointer-events: none; }
+
+        /* Booked slot card */
+        .booked-card {
+            display: flex; align-items: center; gap: 16px;
+            border: 1px solid #e2e8f0; border-radius: 12px;
+            padding: 16px 20px; margin-bottom: 12px;
+        }
+        .booked-icon {
+            width: 42px; height: 42px; border-radius: 10px;
+            background: #5D5FEF; display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0;
+        }
+
+        /* Search input */
+        .search-wrap {
+            position: relative; display: inline-flex; align-items: center;
+        }
+        .search-wrap input {
+            border: 1px solid #e2e8f0; border-radius: 8px;
+            padding: 7px 12px 7px 34px;
+            font-size: 12px; font-weight: 500; color: #374151;
+            outline: none; background: #f8fafc;
+            transition: border 0.15s;
+            width: 200px;
+        }
+        .search-wrap input:focus { border-color: #5D5FEF; background: white; }
+        .search-wrap .s-icon {
+            position: absolute; left: 10px;
+            color: #94a3b8; pointer-events: none;
+        }
+
+        /* Upload button */
+        .upload-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+            border: 1px solid #e2e8f0; border-radius: 8px;
+            padding: 7px 14px; font-size: 12px; font-weight: 600;
+            color: #374151; background: white; cursor: pointer;
+            transition: background 0.15s;
+        }
+        .upload-btn:hover { background: #f1f5f9; }
+
+        .main-scroll { height: calc(100vh - 80px); overflow-y: auto; }
+
+        .tag { padding: 5px 14px; font-size: 11px; font-weight: 600; border: 1px solid #e2e8f0; background: white; border-radius: 9999px; color: #374151; display: inline-block; }
+
+        /* Table: no wrapping in cells, always scroll */
+        table { min-width: 800px; width: 100%; }
+        table td, table th { white-space: nowrap; }
+    
+/* ═══════════════════════════════════════════════════════════
+   TABLET RESPONSIVE  (768px – 1024px)
+   ═══════════════════════════════════════════════════════════ */
+@media (min-width: 768px) and (max-width: 1024px) {
+
+  /* ── Layout: allow page to scroll naturally on tablet ── */
+  body {
+    overflow: auto !important;
+    height: auto !important;
+    flex-direction: row;
+  }
+
+  /* ── Sidebar: fixed icon-rail ── */
+  #sidebar {
+    position: fixed !important;
+    top: 0; left: 0;
+    height: 100vh;
+    width: 52px !important;
+    z-index: 50;
+    overflow: hidden;
+    --sidebar-width: 52px;
+    --sidebar-collapsed: 52px;
+  }
+
+  /* Collapsed: show ONLY the hamburger button, hide everything else */
+  #sidebar .sidebar-label       { opacity: 0 !important; width: 0 !important; pointer-events: none !important; }
+  #sidebar .logo-text           { display: none !important; }
+  #sidebar .logo-icon-only      { display: none !important; }
+  #sidebar #services-dropdown   { display: none; }
+  #sidebar nav                  { display: none !important; }
+  #sidebar .nav-item            { justify-content: center; padding-left: 0 !important; padding-right: 0 !important; }
+  #sidebar .nav-icon            { margin: 0 auto; }
+  #sidebar #services-btn        { justify-content: center; padding-left: 0 !important; padding-right: 0 !important; }
+
+  /* Logo/hamburger row: center the hamburger only */
+  #sidebar > div > div:first-child {
+    justify-content: center !important;
+    padding: 0 !important;
+    height: 52px;
+  }
+
+  /* Expanded state (added by JS) */
+  #sidebar.tablet-open {
+    width: 260px !important;
+  }
+  #sidebar.tablet-open nav                  { display: block !important; }
+  #sidebar.tablet-open .sidebar-label       { opacity: 1 !important; width: auto !important; pointer-events: auto !important; }
+  #sidebar.tablet-open .logo-text           { display: flex !important; }
+  #sidebar.tablet-open .logo-icon-only      { display: none !important; }
+  #sidebar.tablet-open .nav-item            { justify-content: flex-start; padding-left: 1rem !important; padding-right: 1rem !important; }
+  #sidebar.tablet-open .nav-icon            { margin: 0; }
+  #sidebar.tablet-open #services-btn        { justify-content: space-between; padding-left: 1rem !important; padding-right: 1rem !important; }
+  #sidebar.tablet-open > div > div:first-child {
+    justify-content: space-between !important;
+    padding: 20px !important;
+    height: auto;
+  }
+  /* JS controls dropdown display — no !important override */
+
+  /* Backdrop overlay */
+  #tablet-backdrop {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.32);
+    z-index: 49;
+  }
+  #tablet-backdrop.show { display: block; }
+
+  /* ── Main content: offset for sidebar rail ── */
+  .flex-1.flex.flex-col.min-w-0.h-screen.overflow-hidden {
+    margin-left: 52px !important;
+    width: calc(100% - 52px) !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  /* ── Header: tighter padding ── */
+  header.h-20 {
+    height: 64px !important;
+    padding-left: 16px !important;
+    padding-right: 16px !important;
+    position: sticky !important;
+    top: 0;
+    z-index: 10;
+  }
+
+  /* ── Main scroll area: full height scroll ── */
+  .main-scroll {
+    height: auto !important;
+    overflow-y: visible !important;
+    padding: 20px 16px !important;
+  }
+
+  /* ── Top nav: keep on one line at opposite corners ── */
+  .flex.flex-col.lg\:flex-row.lg\:items-center.justify-between.gap-4 {
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 12px !important;
+  }
+
+  /* Tab bar: horizontal scroll */
+  .flex.items-center.bg-white.rounded-xl.border.border-slate-200.shadow-sm.overflow-hidden {
+    width: auto !important;
+    overflow-x: auto !important;
+    white-space: nowrap !important;
+    scrollbar-width: none !important;
+    display: flex !important;
+  }
+  .flex.items-center.bg-white.rounded-xl.border.border-slate-200.shadow-sm.overflow-hidden::-webkit-scrollbar {
+    display: none;
+  }
+  .flex.items-center.bg-white.rounded-xl.border.border-slate-200.shadow-sm.overflow-hidden button {
+    flex: none !important;
+    min-width: 120px !important;
+    padding-left: 14px !important;
+    padding-right: 14px !important;
+    font-size: 11px !important;
+  }
+
+  /* ── Stats grid: 2×2 on tablet ── */
+  .grid.grid-cols-2.md\:grid-cols-4 {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+
+  /* ── Job card: tighter padding ── */
+  .bg-white.border.border-slate-100.rounded-2xl.shadow-sm.p-6.space-y-5,
+  .bg-white.border.border-slate-100.rounded-2xl.shadow-sm.p-6.space-y-4 {
+    padding: 16px !important;
+  }
+
+  /* ── Tables: horizontal scroll ── */
+  .overflow-x-auto {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+  }
+  #active-table,
+  #cand-table {
+    min-width: 800px;
+  }
+  #active-table td, #active-table th,
+  #cand-table td, #cand-table th {
+    white-space: nowrap;
+  }
+
+  /* Table search bar: full width on tablet ── */
+  .search-wrap input { width: 160px !important; }
+
+  /* Header search/upload row: wrap on tablet */
+  .flex.items-center.justify-between.gap-3.flex-wrap {
+    flex-wrap: wrap !important;
+    gap: 10px !important;
+  }
+  .flex.items-center.gap-2.flex-wrap {
+    flex-wrap: wrap !important;
+  }
+
+  /* ── Modals: full-width slide panel ── */
+  .modal-panel {
+    width: 94% !important;
+    min-width: unset !important;
+    padding: 24px 18px !important;
+  }
+
+  /* Schedule modal: stack calendar + slots vertically */
+  .flex.gap-6.flex-wrap {
+    flex-direction: column !important;
+    gap: 16px !important;
+  }
+  .flex.gap-6.flex-wrap > div[style*="min-width:260px"] {
+    min-width: unset !important;
+    width: 100% !important;
+  }
+  #slot-grid {
+    grid-template-columns: repeat(3, 1fr) !important;
+  }
+
+  /* Modal meta info: wrap on tablet */
+  .text-sm.font-semibold.text-slate-600.mb-1,
+  .text-sm.font-semibold.text-slate-600.mb-2,
+  .text-sm.font-semibold.text-slate-600.mb-6 {
+    line-height: 1.8 !important;
+  }
+
+  /* ── Touch targets ── */
+  button, a, input, label {
+    min-height: 36px;
+  }
+}
+
+/* ── Portrait tablet (768–860px) extra tightening ── */
+@media (min-width: 768px) and (max-width: 860px) {
+  .main-scroll { padding: 14px 12px !important; }
+  header.h-20 { height: 60px !important; padding: 0 12px !important; }
+  #slot-grid { grid-template-columns: repeat(2, 1fr) !important; }
+  .search-wrap input { width: 130px !important; }
+}
+
+    </style>
+</head>
+<body class="bg-[#F8FAFC] text-slate-800 font-sans h-screen flex overflow-hidden">
+
+    <!-- Tablet backdrop overlay -->
+    <div id="tablet-backdrop"></div>
+
+    <!-- SIDEBAR -->
+    <aside id="sidebar" class="bg-white border-r border-slate-100 flex flex-col justify-between shrink-0 h-screen sticky top-0 z-20">
+        <div>
+            <!-- Logo + Hamburger -->
+            <div class="p-5 flex items-center justify-between gap-2 border-b border-slate-100">
+                <div class="logo-text flex flex-col">
+                    <img 
+        src="logo.png" 
+        alt="Flexwork Logo"
+        class="w-32 h-auto object-contain"
+    >
+                    <span class="text-[9px] text-slate-400 font-medium tracking-wider uppercase -mt-1">Beyond Work, Beyond Flexx</span>
+                </div>
+                <div class="logo-icon-only items-center justify-center w-full">
+                    <span class="text-xl font-black text-[#3B41E3]">f<span class="text-[#FFB800]">w</span></span>
+                </div>
+                <button id="toggle-sidebar" class="p-1.5 rounded-lg hover:bg-slate-100 text-slate-500 transition flex-shrink-0">
+                    <i data-lucide="menu" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <nav class="px-3 py-3 space-y-1">
+                <a href="#" class="nav-item flex items-center gap-3 px-4 py-3 text-sm font-semibold text-slate-600 rounded-xl hover:bg-slate-50 transition">
+                    <i data-lucide="home" class="nav-icon w-5 h-5 text-slate-400 flex-shrink-0"></i>
+                    <span class="sidebar-label">Dashboard</span>
+                </a>
+
+                <a href="#" class="nav-item flex items-center gap-3 px-4 py-3 text-sm font-semibold text-slate-600 rounded-xl hover:bg-slate-50 transition">
+                    <svg class="nav-icon w-5 h-5 text-slate-400 flex-shrink-0" viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M1 14s-1 0-1-1 1-4 6-4 6 3 6 4-1 1-1 1zm5-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6"/>
+                        <path fill-rule="evenodd" d="M13.5 5a.5.5 0 0 1 .5.5V7h1.5a.5.5 0 0 1 0 1H14v1.5a.5.5 0 0 1-1 0V8h-1.5a.5.5 0 0 1 0-1H13V5.5a.5.5 0 0 1 .5-.5"/>
+                    </svg>
+                    <span class="sidebar-label">Agents</span>
+                </a>
+
+                <div class="space-y-1">
+                    <button id="services-btn" class="w-full flex items-center justify-between px-4 py-3 text-sm font-semibold text-white bg-[#5D5FEF] rounded-xl shadow-sm transition">
+                        <span class="flex items-center gap-3">
+                            <svg class="nav-icon w-5 h-5 text-white flex-shrink-0" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M8.186 1.113a.5.5 0 0 0-.372 0L1.846 3.5 8 5.96l6.154-2.46-3.968-1.587Z"/>
+                                <path d="M14.704 4.588 8 7.27v7.618l6.704-2.682a.5.5 0 0 0 .296-.463V5.05a.5.5 0 0 0-.296-.462ZM7 14.888V7.27l-6.704-2.682A.5.5 0 0 0 0 5.05v6.693a.5.5 0 0 0 .296.463L7 14.888Z"/>
+                            </svg>
+                            <span class="sidebar-label">Our Services</span>
+                        </span>
+                        <i data-lucide="chevron-up" class="dropdown-arrow w-4 h-4 text-white sidebar-label"></i>
+                    </button>
+                    <div id="services-dropdown" class="pl-6 pr-2 py-1 space-y-1 relative before:absolute before:left-4 before:top-0 before:bottom-0 before:w-0.5 before:bg-slate-100">
+                        <a href="#" class="flex items-center gap-3 px-4 py-2 text-xs font-bold text-[#3B41E3] bg-[#EEF2FF] rounded-lg relative">
+                            <span class="absolute -left-[11px] w-2 h-2 rounded-full bg-[#3B41E3]"></span>
+                            <span class="sidebar-label">Interview Panel</span>
+                        </a>
+                        <a href="#" class="flex items-center gap-3 px-4 py-2 text-xs font-medium text-slate-500 rounded-lg hover:bg-slate-50 transition">
+                            <span class="w-1.5 h-1.5 rounded-full border border-slate-300 bg-white -ml-[10px] flex-shrink-0"></span>
+                            <span class="sidebar-label">Consultants</span>
+                        </a>
+                        <a href="#" class="flex items-center gap-3 px-4 py-2 text-xs font-medium text-slate-500 rounded-lg hover:bg-slate-50 transition">
+                            <span class="w-1.5 h-1.5 rounded-full border border-slate-300 bg-white -ml-[10px] flex-shrink-0"></span>
+                            <span class="sidebar-label">Trainer</span>
+                        </a>
+                    </div>
+                </div>
+
+                <a href="#" class="nav-item flex items-center gap-3 px-4 py-3 text-sm font-semibold text-slate-600 rounded-xl hover:bg-slate-50 transition">
+                    <i data-lucide="file-text" class="nav-icon w-5 h-5 text-slate-400 flex-shrink-0"></i>
+                    <span class="sidebar-label">Invoices</span>
+                </a>
+
+                <a href="#" class="nav-item flex items-center gap-3 px-4 py-3 text-sm font-semibold text-slate-600 rounded-xl hover:bg-slate-50 transition">
+                    <i data-lucide="credit-card" class="nav-icon w-5 h-5 text-slate-400 flex-shrink-0"></i>
+                    <span class="sidebar-label">Payments</span>
+                </a>
+            </nav>
+        </div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <div class="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
+
+        <!-- Header -->
+        <header class="h-20 bg-white border-b border-slate-100 flex items-center justify-between px-8 shrink-0 sticky top-0 z-10">
+            <div></div>
+            <div class="flex items-center gap-6">
+                <button class="relative text-slate-700 hover:text-slate-900 transition">
+                    <i data-lucide="bell" class="w-6 h-6"></i>
+                    <span class="absolute top-0 right-0 w-2 h-2 rounded-full bg-red-500 border-2 border-white"></span>
+                </button>
+                <div class="flex items-center gap-3 cursor-pointer group">
+                    <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=100&h=100" alt="Christina" class="w-9 h-9 rounded-full object-cover border border-slate-200">
+                    <div class="text-left">
+                        <p class="text-sm font-bold text-[#3B41E3]">Hello Christina</p>
+                        <p class="text-[11px] font-semibold text-slate-500">Flex Dev22</p>
+                    </div>
+                    <i data-lucide="chevron-down" class="w-4 h-4 text-slate-500 ml-1"></i>
+                </div>
+            </div>
+        </header>
+
+        <!-- Scrollable Main -->
+        <main class="main-scroll p-8 max-w-[1400px] w-full mx-auto space-y-6">
+
+            <!-- Top Nav -->
+            <div class="flex flex-row items-center justify-between gap-4 flex-wrap">
+                <h1 class="text-xl font-bold text-slate-900 shrink-0">Interview Panel</h1>
+                <div class="flex items-center bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                    <button class="flex-1 lg:flex-none flex items-center justify-center gap-2 px-6 py-3 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition border-r border-slate-200">
+                        <i data-lucide="calendar" class="w-4 h-4 text-indigo-500"></i>
+                        Job Posting
+                    </button>
+                    <button class="flex-1 lg:flex-none flex items-center justify-center gap-2 px-6 py-3 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition border-r border-slate-200">
+                        <i data-lucide="user-check" class="w-4 h-4 text-indigo-500"></i>
+                        Job Requirement
+                    </button>
+                    <button class="flex-1 lg:flex-none flex items-center gap-2 justify-between px-6 py-3 text-xs font-semibold text-white bg-[#5D5FEF] transition min-w-[220px]">
+                        <span class="flex items-center gap-2">
+                            <i data-lucide="clock" class="w-4 h-4"></i>
+                            Ongoing Requirement
+                        </span>
+                        <i data-lucide="chevron-down" class="w-4 h-4"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Job Details Card -->
+            <div class="bg-white border border-slate-100 rounded-2xl shadow-sm p-6 space-y-5">
+                <div>
+                    <h2 class="text-xl font-bold text-slate-900">OS Developer</h2>
+                    <p class="text-sm font-semibold text-slate-800 mt-1">Tech Innovations <span class="text-slate-300 mx-1.5">|</span> New York, NY</p>
+                </div>
+
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div class="bg-[#EEF2FF] border border-indigo-100 rounded-xl px-4 py-2.5 flex items-center justify-between">
+                        <span class="flex items-center gap-2 text-xs font-bold text-slate-800"><i data-lucide="layers" class="w-4 h-4 text-indigo-500"></i> All Applications</span>
+                        <span class="text-lg font-extrabold text-indigo-600">6</span>
+                    </div>
+                    <div class="bg-[#E6F4EA] border border-green-100 rounded-xl px-4 py-2.5 flex items-center justify-between">
+                        <span class="flex items-center gap-2 text-xs font-bold text-slate-800"><i data-lucide="check-circle" class="w-4 h-4 text-green-600"></i> Accepted</span>
+                        <span class="text-lg font-extrabold text-green-600">2</span>
+                    </div>
+                    <div class="bg-[#FCE8E6] border border-red-100 rounded-xl px-4 py-2.5 flex items-center justify-between">
+                        <span class="flex items-center gap-2 text-xs font-bold text-slate-800"><i data-lucide="x-circle" class="w-4 h-4 text-red-500"></i> Rejected</span>
+                        <span class="text-lg font-extrabold text-red-500">3</span>
+                    </div>
+                    <div class="bg-[#FFF8E1] border border-amber-100 rounded-xl px-4 py-2.5 flex items-center justify-between">
+                        <span class="flex items-center gap-2 text-xs font-bold text-slate-800"><i data-lucide="hourglass" class="w-4 h-4 text-amber-500"></i> Pending</span>
+                        <span class="text-lg font-extrabold text-amber-600">1</span>
+                    </div>
+                </div>
+
+                <div class="text-xs space-y-1.5">
+                    <h4 class="font-bold text-slate-900 text-sm">Job Description: OS Developer</h4>
+                    <ul class="list-disc list-inside text-slate-700 font-medium space-y-1 pl-1">
+                        <li>Develop and maintain OS-level applications and tools.</li>
+                        <li>Collaborate with cross-functional teams to design and implement new features.</li>
+                        <li>Troubleshoot and optimize system performance.</li>
+                    </ul>
+                </div>
+
+                <div class="flex flex-wrap gap-2 pt-1">
+                    <span class="tag">JAVA</span>
+                    <span class="tag">SQL</span>
+                    <span class="tag">API Testing</span>
+                    <span class="tag">API Gateway</span>
+                    <span class="tag">HTML/CSS</span>
+                    <span class="tag">Scripting Language: Java Script</span>
+                    <span class="tag">Git</span>
+                </div>
+
+                <div class="flex flex-wrap items-center gap-2 pt-1 text-xs">
+                    <span class="font-bold text-slate-900 mr-2">Interview Criteria's:</span>
+                    <span class="tag">Soft Skills</span>
+                    <span class="tag">Attitude &amp; Professionalism</span>
+                    <span class="tag">Problem-Solving Ability</span>
+                    <span class="tag">Communication Skills</span>
+                </div>
+            </div>
+
+            <!-- Active Panel -->
+            <div class="bg-white border border-slate-100 rounded-2xl shadow-sm p-6 space-y-4">
+                <div class="flex items-center justify-between gap-3 flex-wrap">
+                    <h3 class="text-sm font-bold text-slate-900 tracking-wide">Active Panel</h3>
+                    <div class="search-wrap">
+                        <i data-lucide="search" class="s-icon w-4 h-4"></i>
+                        <input type="text" placeholder="Search Active Panel Members..." id="active-search">
+                    </div>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse text-xs" id="active-table">
+                        <thead>
+                            <tr class="border-b border-slate-100 text-slate-400 font-bold uppercase tracking-wider">
+                                <th class="pb-3 px-4">Candidate</th>
+                                <th class="pb-3 px-4">Email</th>
+                                <th class="pb-3 px-4">Interview Date</th>
+                                <th class="pb-3 px-4">Status</th>
+                                <th class="pb-3 px-4 text-center">Slots Booked</th>
+                                <th class="pb-3 px-4 text-center">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100 font-semibold text-slate-700">
+                            <tr class="hover:bg-slate-50/50" data-name="GENERIA MATATA">
+                                <td class="py-3 px-4">
+                                    <div class="flex items-center gap-2">
+                                        <span class="w-7 h-7 rounded-full bg-indigo-100 text-indigo-600 font-bold flex items-center justify-center text-[10px] flex-shrink-0">GM</span>
+                                        GENERIA MATATA
+                                    </div>
+                                </td>
+                                <td class="py-3 px-4">Interveise@obmail.com</td>
+                                <td class="py-3 px-4">03/07/2023</td>
+                                <td class="py-3 px-4"><span class="bg-amber-100 text-amber-700 px-2.5 py-0.5 rounded text-[10px] font-bold">Pending</span></td>
+                                <td class="py-3 px-4 text-center">
+                                    <button onclick="openBookedSlots('FW-CAND15','GENERIA','MATATA')" class="border border-slate-200 hover:bg-slate-50 px-3 py-1 rounded inline-flex items-center gap-1 font-bold text-slate-700"><i data-lucide="eye" class="w-3.5 h-3.5"></i> View</button>
+                                </td>
+                                <td class="py-3 px-4 text-center">
+                                    <button onclick="openSchedule('FW-CAND15','GENERIA','MATATA')" class="border border-slate-200 hover:bg-slate-50 px-3 py-1 rounded inline-flex items-center gap-1 font-bold text-slate-700"><i data-lucide="calendar" class="w-3.5 h-3.5"></i> Schedule</button>
+                                </td>
+                            </tr>
+                            <tr class="hover:bg-slate-50/50" data-name="GENERAL PRACTITIONER">
+                                <td class="py-3 px-4">
+                                    <div class="flex items-center gap-2">
+                                        <span class="w-7 h-7 rounded-full bg-indigo-100 text-indigo-600 font-bold flex items-center justify-center text-[10px] flex-shrink-0">GP</span>
+                                        GENERAL PRACTITIONER
+                                    </div>
+                                </td>
+                                <td class="py-3 px-4">Laura@jobmail.com</td>
+                                <td class="py-3 px-4">03/07/2023</td>
+                                <td class="py-3 px-4"><span class="bg-[#5D5FEF] text-white px-2.5 py-0.5 rounded text-[10px] font-bold">Schedule</span></td>
+                                <td class="py-3 px-4 text-center">
+                                    <button onclick="openBookedSlots('FW-CAND16','GENERAL','PRACTITIONER')" class="border border-slate-200 hover:bg-slate-50 px-3 py-1 rounded inline-flex items-center gap-1 font-bold text-slate-700"><i data-lucide="eye" class="w-3.5 h-3.5"></i> View</button>
+                                </td>
+                                <td class="py-3 px-4 text-center">
+                                    <button onclick="openSchedule('FW-CAND16','GENERAL','PRACTITIONER')" class="border border-slate-200 hover:bg-slate-50 px-3 py-1 rounded inline-flex items-center gap-1 font-bold text-slate-700"><i data-lucide="calendar" class="w-3.5 h-3.5"></i> Schedule</button>
+                                </td>
+                            </tr>
+                            <tr class="hover:bg-slate-50/50" data-name="GENERAL PRACTITIONER">
+                                <td class="py-3 px-4">
+                                    <div class="flex items-center gap-2">
+                                        <span class="w-7 h-7 rounded-full bg-indigo-100 text-indigo-600 font-bold flex items-center justify-center text-[10px] flex-shrink-0">GP</span>
+                                        GENERAL PRACTITIONER
+                                    </div>
+                                </td>
+                                <td class="py-3 px-4">James@email.com</td>
+                                <td class="py-3 px-4">03/09/2023</td>
+                                <td class="py-3 px-4"><span class="bg-indigo-100 text-[#5D5FEF] px-2.5 py-0.5 rounded text-[10px] font-bold">Scheduled</span></td>
+                                <td class="py-3 px-4 text-center">
+                                    <button onclick="openBookedSlots('FW-CAND17','GENERAL','PRACTITIONER')" class="border border-slate-200 hover:bg-slate-50 px-3 py-1 rounded inline-flex items-center gap-1 font-bold text-slate-700"><i data-lucide="eye" class="w-3.5 h-3.5"></i> View</button>
+                                </td>
+                                <td class="py-3 px-4 text-center">
+                                    <button onclick="openSchedule('FW-CAND17','GENERAL','PRACTITIONER')" class="border border-slate-200 hover:bg-slate-50 px-3 py-1 rounded inline-flex items-center gap-1 font-bold text-slate-700"><i data-lucide="calendar" class="w-3.5 h-3.5"></i> Schedule</button>
+                                </td>
+                            </tr>
+                            <tr class="hover:bg-slate-50/50" data-name="HAKUNA PRACTITIONER">
+                                <td class="py-3 px-4">
+                                    <div class="flex items-center gap-2">
+                                        <span class="w-7 h-7 rounded-full bg-indigo-100 text-indigo-600 font-bold flex items-center justify-center text-[10px] flex-shrink-0">HP</span>
+                                        HAKUNA PRACTITIONER
+                                    </div>
+                                </td>
+                                <td class="py-3 px-4">Emily@email.com</td>
+                                <td class="py-3 px-4">03/10/2023</td>
+                                <td class="py-3 px-4"><span class="bg-[#00B69B] text-white px-2.5 py-0.5 rounded text-[10px] font-bold">Hired</span></td>
+                                <td class="py-3 px-4 text-center">
+                                    <button onclick="openBookedSlots('FW-CAND18','HAKUNA','PRACTITIONER')" class="border border-slate-200 hover:bg-slate-50 px-3 py-1 rounded inline-flex items-center gap-1 font-bold text-slate-700"><i data-lucide="eye" class="w-3.5 h-3.5"></i> View</button>
+                                </td>
+                                <td class="py-3 px-4 text-center">
+                                    <button onclick="openSchedule('FW-CAND18','HAKUNA','PRACTITIONER')" class="border border-slate-200 hover:bg-slate-50 px-3 py-1 rounded inline-flex items-center gap-1 font-bold text-slate-700"><i data-lucide="calendar" class="w-3.5 h-3.5"></i> Schedule</button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Interview Candidates -->
+            <div class="bg-white border border-slate-100 rounded-2xl shadow-sm p-6 space-y-4">
+                <div class="flex items-center justify-between gap-3 flex-wrap">
+                    <h3 class="text-sm font-bold text-slate-900 tracking-wide">Interview Candidates</h3>
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <div class="search-wrap">
+                            <i data-lucide="search" class="s-icon w-4 h-4"></i>
+                            <input type="text" placeholder="Search candidates..." id="cand-search">
+                        </div>
+                        <label class="upload-btn">
+                            <i data-lucide="upload" class="w-3.5 h-3.5 text-indigo-500 mr-1.5"></i>
+                            Upload
+                            <input type="file" class="hidden" accept=".csv,.xlsx,.pdf">
+                        </label>
+                    </div>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse text-xs" id="cand-table">
+                        <thead>
+                            <tr class="border-b border-slate-100 text-slate-400 font-bold uppercase tracking-wider">
+                                <th class="pb-3 px-4">Firstname</th>
+                                <th class="pb-3 px-4">Lastname</th>
+                                <th class="pb-3 px-4">Email</th>
+                                <th class="pb-3 px-4">Mobile</th>
+                                <th class="pb-3 px-4">Status</th>
+                                <th class="pb-3 px-4">Slot Date</th>
+                                <th class="pb-3 px-4">Slot Time</th>
+                                <th class="pb-3 px-4 text-center">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100 font-semibold text-slate-700">
+                            <tr class="hover:bg-slate-50/50" data-name="HAKUNA MATATA">
+                                <td class="py-3 px-4">
+                                    <div class="flex items-center gap-2">
+                                        <span class="w-7 h-7 rounded-full bg-indigo-100 text-indigo-600 font-bold flex items-center justify-center text-[10px] flex-shrink-0">HM</span>
+                                        HAKUNA
+                                    </div>
+                                </td>
+                                <td class="py-3 px-4">MATATA</td>
+                                <td class="py-3 px-4">Vishal@mailinator.com</td>
+                                <td class="py-3 px-4">002206736</td>
+                                <td class="py-3 px-4"><span class="bg-green-100 text-green-700 px-2.5 py-0.5 rounded text-[10px] font-bold">Completed</span></td>
+                                <td class="py-3 px-4">2026-03-09</td>
+                                <td class="py-3 px-4">10:00 AM - 10:30 AM</td>
+                                <td class="py-3 px-4 text-center relative">
+                                    <div class="inline-block relative">
+                                        <button class="action-trigger p-1.5 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition inline-flex items-center justify-center">
+                                            <i data-lucide="more-vertical" class="w-4 h-4"></i>
+                                        </button>
+                                        <div class="action-dropdown" data-ref="FW-CAND15" data-first="HAKUNA" data-last="MATATA">
+                                            <a class="feedback-link"><i data-lucide="eye" class="w-4 h-4 text-slate-400"></i> View Feedback</a>
+                                            <a><i data-lucide="download" class="w-4 h-4 text-slate-400"></i> Download</a>
+                                            <a><i data-lucide="pencil" class="w-4 h-4 text-slate-400"></i> Edit</a>
+                                            <a class="danger"><i data-lucide="trash-2" class="w-4 h-4"></i> Delete</a>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr class="hover:bg-slate-50/50" data-name="GENERAL PRACTITIONER">
+                                <td class="py-3 px-4">
+                                    <div class="flex items-center gap-2">
+                                        <span class="w-7 h-7 rounded-full bg-indigo-100 text-indigo-600 font-bold flex items-center justify-center text-[10px] flex-shrink-0">GP</span>
+                                        GENERAL
+                                    </div>
+                                </td>
+                                <td class="py-3 px-4">PRACTITIONER</td>
+                                <td class="py-3 px-4">Sekhar.panel@mailinator.com</td>
+                                <td class="py-3 px-4">002206736</td>
+                                <td class="py-3 px-4"><span class="bg-green-100 text-green-700 px-2.5 py-0.5 rounded text-[10px] font-bold">Completed</span></td>
+                                <td class="py-3 px-4">2026-03-09</td>
+                                <td class="py-3 px-4">01:00 PM - 01:30 PM</td>
+                                <td class="py-3 px-4 text-center relative">
+                                    <div class="inline-block relative">
+                                        <button class="action-trigger p-1.5 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition inline-flex items-center justify-center">
+                                            <i data-lucide="more-vertical" class="w-4 h-4"></i>
+                                        </button>
+                                        <div class="action-dropdown" data-ref="FW-CAND16" data-first="GENERAL" data-last="PRACTITIONER">
+                                            <a class="feedback-link"><i data-lucide="eye" class="w-4 h-4 text-slate-400"></i> View Feedback</a>
+                                            <a><i data-lucide="download" class="w-4 h-4 text-slate-400"></i> Download</a>
+                                            <a><i data-lucide="pencil" class="w-4 h-4 text-slate-400"></i> Edit</a>
+                                            <a class="danger"><i data-lucide="trash-2" class="w-4 h-4"></i> Delete</a>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- ======== SCHEDULE MODAL ======== -->
+    <div class="modal-overlay" id="schedule-modal" onclick="closeModalOnOverlay(event, 'schedule-modal')">
+        <div class="modal-panel">
+            <button onclick="closeModal('schedule-modal')" class="absolute top-5 right-5 text-slate-400 hover:text-slate-700"><i data-lucide="x" class="w-5 h-5"></i></button>
+            <div class="flex items-center gap-3 mb-6">
+                <h2 class="text-xl font-bold text-slate-900">Panel Details</h2>
+                <span class="bg-indigo-100 text-indigo-700 text-xs font-bold px-3 py-1 rounded-full">Schedule</span>
+            </div>
+            <p class="text-sm font-semibold text-slate-600 mb-1">
+                Reference ID : <span id="s-ref" class="font-bold text-slate-900"></span>
+                &nbsp;&nbsp; FirstName : <span id="s-first" class="font-bold text-slate-900"></span>
+                &nbsp;&nbsp; LastName : <span id="s-last" class="font-bold text-slate-900"></span>
+            </p>
+
+            <!-- Legend -->
+            <div class="flex items-center gap-4 text-xs font-semibold mt-4 mb-5">
+                <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-green-500 inline-block"></span> Slots Available</span>
+                <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-amber-400 inline-block"></span> Partially Filled</span>
+                <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-red-400 inline-block"></span> Slots Soldout</span>
+            </div>
+
+            <h4 class="font-bold text-slate-800 mb-3 text-sm">Select Date &amp; Time</h4>
+            <div class="flex gap-6 flex-wrap">
+                <!-- Calendar -->
+                <div class="border border-slate-200 rounded-xl p-4 flex-shrink-0" style="min-width:260px">
+                    <div class="flex items-center justify-between mb-3">
+                        <button id="cal-prev" class="text-slate-400 hover:text-slate-700"><i data-lucide="chevron-left" class="w-4 h-4"></i></button>
+                        <span id="cal-month-label" class="text-sm font-bold text-slate-800"></span>
+                        <button id="cal-next" class="text-slate-400 hover:text-slate-700"><i data-lucide="chevron-right" class="w-4 h-4"></i></button>
+                    </div>
+                    <div class="grid grid-cols-7 gap-1 text-center text-[11px] font-bold text-slate-400 mb-1">
+                        <span>S</span><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span>
+                    </div>
+                    <div id="cal-grid" class="grid grid-cols-7 gap-1 text-center"></div>
+                </div>
+
+                <!-- Time Slots -->
+                <div class="flex-1">
+                    <p id="selected-date-label" class="text-base font-bold text-slate-900 mb-3">23 Saturday</p>
+                    <div id="slot-grid" class="grid grid-cols-2 gap-3">
+                        <button class="slot-btn slot-available" onclick="selectSlot(this)">09:00 AM<br><span class="text-[11px] font-normal opacity-75">Available</span></button>
+                        <button class="slot-btn slot-available" onclick="selectSlot(this)">10:00 AM<br><span class="text-[11px] font-normal opacity-75">Available</span></button>
+                        <button class="slot-btn slot-partial" onclick="selectSlot(this)">11:00 AM<br><span class="text-[11px] font-normal opacity-75">Partially Filled</span></button>
+                        <button class="slot-btn slot-soldout" disabled>01:00 PM<br><span class="text-[11px] font-normal opacity-75">Sold Out</span></button>
+                        <button class="slot-btn slot-available" onclick="selectSlot(this)">02:00 PM<br><span class="text-[11px] font-normal opacity-75">Available</span></button>
+                        <button class="slot-btn slot-partial" onclick="selectSlot(this)">03:30 PM<br><span class="text-[11px] font-normal opacity-75">Partially Filled</span></button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-6 flex justify-end gap-3">
+                <button onclick="closeModal('schedule-modal')" class="px-5 py-2 text-sm font-semibold text-slate-600 border border-slate-200 rounded-lg hover:bg-slate-50">Cancel</button>
+                <button class="px-5 py-2 text-sm font-semibold text-white bg-[#5D5FEF] rounded-lg hover:bg-indigo-700">Confirm Booking</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ======== BOOKED SLOTS MODAL ======== -->
+    <div class="modal-overlay" id="booked-modal" onclick="closeModalOnOverlay(event, 'booked-modal')">
+        <div class="modal-panel">
+            <button onclick="closeModal('booked-modal')" class="absolute top-5 right-5 text-slate-400 hover:text-slate-700"><i data-lucide="x" class="w-5 h-5"></i></button>
+            <div class="flex items-center gap-3 mb-6">
+                <h2 class="text-xl font-bold text-slate-900">Panel Details</h2>
+                <span class="bg-green-100 text-green-700 text-xs font-bold px-3 py-1 rounded-full">Booked Slots</span>
+            </div>
+            <p class="text-sm font-semibold text-slate-600 mb-6">
+                Reference ID : <span id="b-ref" class="font-bold text-slate-900"></span>
+                &nbsp;&nbsp; FirstName : <span id="b-first" class="font-bold text-slate-900"></span>
+                &nbsp;&nbsp; LastName : <span id="b-last" class="font-bold text-slate-900"></span>
+            </p>
+            <h4 class="font-bold text-slate-800 mb-4">Booked Slots</h4>
+            <div class="booked-card">
+                <div class="booked-icon">
+                    <i data-lucide="calendar" class="w-5 h-5 text-white"></i>
+                </div>
+                <div>
+                    <p class="text-sm font-bold text-slate-900">9 Monday, MARCH 2026</p>
+                    <p class="text-sm font-semibold text-slate-600">04:30 PM – 05:00 PM</p>
+                </div>
+                <span class="ml-auto text-xs font-bold text-green-600 bg-green-50 border border-green-200 px-3 py-1 rounded-full">Confirmed</span>
+            </div>
+            <div class="booked-card">
+                <div class="booked-icon">
+                    <i data-lucide="calendar" class="w-5 h-5 text-white"></i>
+                </div>
+                <div>
+                    <p class="text-sm font-bold text-slate-900">21 Saturday, MARCH 2026</p>
+                    <p class="text-sm font-semibold text-slate-600">09:45 AM – 10:15 AM</p>
+                </div>
+                <span class="ml-auto text-xs font-bold text-green-600 bg-green-50 border border-green-200 px-3 py-1 rounded-full">Confirmed</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- ======== FEEDBACK MODAL ======== -->
+    <div class="modal-overlay" id="feedback-modal" onclick="closeModalOnOverlay(event, 'feedback-modal')">
+        <div class="modal-panel">
+            <button onclick="closeModal('feedback-modal')" class="absolute top-5 right-5 text-slate-400 hover:text-slate-700"><i data-lucide="x" class="w-5 h-5"></i></button>
+            <div class="flex items-center gap-3 mb-6">
+                <h2 class="text-xl font-bold text-slate-900">Panel Details</h2>
+                <span class="bg-green-100 text-green-700 text-xs font-bold px-3 py-1 rounded-full">Booked Slots</span>
+            </div>
+            <p class="text-sm font-semibold text-slate-600 mb-2">
+                Reference ID : <span id="f-ref" class="font-bold text-slate-900"></span>
+                &nbsp;&nbsp; FirstName : <span id="f-first" class="font-bold text-slate-900"></span>
+                &nbsp;&nbsp; LastName : <span id="f-last" class="font-bold text-slate-900"></span>
+            </p>
+            <p class="text-sm font-semibold text-slate-700 mt-4 mb-8">View Feedback</p>
+            <div class="flex flex-col items-center justify-center py-16 text-center">
+                <div class="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center mb-4">
+                    <i data-lucide="file-text" class="w-7 h-7 text-slate-400"></i>
+                </div>
+                <p class="text-base font-bold text-slate-700 mb-2">No Feedback Yet</p>
+                <p class="text-sm text-slate-400 font-medium max-w-xs">Feedback will appear here once the interview has been completed and reviewed.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        lucide.createIcons();
+
+        // ---- SIDEBAR TOGGLE ----
+        const sidebar = document.getElementById('sidebar');
+        const servicesBtn = document.getElementById('services-btn');
+        const servicesDropdown = document.getElementById('services-dropdown');
+        let dropdownOpen = false;
+        const tabletBackdrop = document.getElementById('tablet-backdrop');
+
+        function isTablet() {
+            return window.innerWidth >= 768 && window.innerWidth <= 1024;
+        }
+
+        function openDropdown() {
+            servicesDropdown.style.display = 'block';
+            servicesBtn.classList.add('dropdown-open');
+            dropdownOpen = true;
+        }
+
+        function closeDropdown() {
+            servicesDropdown.style.display = 'none';
+            servicesBtn.classList.remove('dropdown-open');
+            dropdownOpen = false;
+        }
+
+        function openTabletSidebar() {
+            sidebar.classList.add('tablet-open');
+            tabletBackdrop.classList.add('show');
+            openDropdown();
+        }
+
+        function closeTabletSidebar() {
+            sidebar.classList.remove('tablet-open');
+            tabletBackdrop.classList.remove('show');
+        }
+
+        tabletBackdrop.addEventListener('click', closeTabletSidebar);
+
+        window.addEventListener('resize', () => {
+            if (!isTablet()) {
+                tabletBackdrop.classList.remove('show');
+                sidebar.classList.remove('tablet-open');
+            }
+        });
+
+        document.getElementById('toggle-sidebar').addEventListener('click', () => {
+            if (isTablet()) {
+                if (sidebar.classList.contains('tablet-open')) closeTabletSidebar();
+                else openTabletSidebar();
+                return;
+            }
+            sidebar.classList.toggle('collapsed');
+            if (sidebar.classList.contains('collapsed')) {
+                closeDropdown();
+            } else {
+                openDropdown();
+            }
+        });
+
+        servicesBtn.addEventListener('click', () => {
+            if (isTablet()) {
+                if (!sidebar.classList.contains('tablet-open')) {
+                    openTabletSidebar();
+                    return;
+                }
+                dropdownOpen ? closeDropdown() : openDropdown();
+                return;
+            }
+            if (sidebar.classList.contains('collapsed')) return;
+            dropdownOpen ? closeDropdown() : openDropdown();
+        });
+
+        // Open dropdown by default on desktop only
+        if (!isTablet()) openDropdown();
+
+        // ---- CALENDAR ----
+        let calDate = new Date(2026, 4, 1); // May 2026
+        let selectedDay = 23;
+
+        function renderCalendar() {
+            const months = ['JANUARY','FEBRUARY','MARCH','APRIL','MAY','JUNE','JULY','AUGUST','SEPTEMBER','OCTOBER','NOVEMBER','DECEMBER'];
+            document.getElementById('cal-month-label').textContent = `${months[calDate.getMonth()]} ${calDate.getFullYear()}`;
+            const grid = document.getElementById('cal-grid');
+            grid.innerHTML = '';
+            const first = new Date(calDate.getFullYear(), calDate.getMonth(), 1).getDay();
+            const days = new Date(calDate.getFullYear(), calDate.getMonth() + 1, 0).getDate();
+            const today = new Date();
+            for (let i = 0; i < first; i++) {
+                const el = document.createElement('div');
+                grid.appendChild(el);
+            }
+            for (let d = 1; d <= days; d++) {
+                const el = document.createElement('div');
+                el.className = 'cal-day';
+                el.textContent = d;
+                const isToday = d === today.getDate() && calDate.getMonth() === today.getMonth() && calDate.getFullYear() === today.getFullYear();
+                const isSelected = d === selectedDay && calDate.getMonth() === today.getMonth();
+                if (isSelected) el.classList.add('selected');
+                else if (isToday) el.classList.add('today');
+                el.addEventListener('click', () => {
+                    selectedDay = d;
+                    const dayNames = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+                    const dt = new Date(calDate.getFullYear(), calDate.getMonth(), d);
+                    document.getElementById('selected-date-label').textContent = `${d} ${dayNames[dt.getDay()]}`;
+                    renderCalendar();
+                });
+                grid.appendChild(el);
+            }
+        }
+
+        document.getElementById('cal-prev').addEventListener('click', () => {
+            calDate.setMonth(calDate.getMonth() - 1);
+            renderCalendar();
+        });
+        document.getElementById('cal-next').addEventListener('click', () => {
+            calDate.setMonth(calDate.getMonth() + 1);
+            renderCalendar();
+        });
+
+        function selectSlot(btn) {
+            document.querySelectorAll('#slot-grid .slot-btn').forEach(b => b.classList.remove('selected'));
+            btn.classList.add('selected');
+        }
+
+        // ---- MODALS ----
+        function openSchedule(ref, first, last) {
+            document.getElementById('s-ref').textContent = ref;
+            document.getElementById('s-first').textContent = first;
+            document.getElementById('s-last').textContent = last;
+            renderCalendar();
+            document.getElementById('schedule-modal').classList.add('active');
+            lucide.createIcons();
+        }
+
+        function openBookedSlots(ref, first, last) {
+            document.getElementById('b-ref').textContent = ref;
+            document.getElementById('b-first').textContent = first;
+            document.getElementById('b-last').textContent = last;
+            document.getElementById('booked-modal').classList.add('active');
+            lucide.createIcons();
+        }
+
+        function openFeedback(ref, first, last) {
+            document.getElementById('f-ref').textContent = ref;
+            document.getElementById('f-first').textContent = first;
+            document.getElementById('f-last').textContent = last;
+            closeAllDropdowns();
+            document.getElementById('feedback-modal').classList.add('active');
+            lucide.createIcons();
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).classList.remove('active');
+        }
+
+        function closeModalOnOverlay(e, id) {
+            if (e.target === document.getElementById(id)) closeModal(id);
+        }
+
+        // ---- ACTION DROPDOWN (event delegation) ----
+        function closeAllDropdowns() {
+            document.querySelectorAll('.action-dropdown').forEach(m => m.classList.remove('show'));
+        }
+
+        document.addEventListener('click', (e) => {
+            // Open/close on trigger button
+            const trigger = e.target.closest('.action-trigger');
+            if (trigger) {
+                const menu = trigger.nextElementSibling;
+                const isOpen = menu.classList.contains('show');
+                closeAllDropdowns();
+                if (!isOpen) {
+                    const rect = trigger.getBoundingClientRect();
+                    const menuWidth = 175;
+                    let left = rect.right - menuWidth;
+                    if (left < 8) left = 8;
+                    // flip up if near bottom of screen
+                    const spaceBelow = window.innerHeight - rect.bottom;
+                    if (spaceBelow < 160) {
+                        menu.style.top = (rect.top - 160) + 'px';
+                    } else {
+                        menu.style.top = (rect.bottom + 4) + 'px';
+                    }
+                    menu.style.left = left + 'px';
+                    menu.classList.add('show');
+                }
+                e.stopPropagation();
+                return;
+            }
+
+            // View Feedback link inside dropdown
+            const feedbackLink = e.target.closest('.feedback-link');
+            if (feedbackLink) {
+                const menu = feedbackLink.closest('.action-dropdown');
+                const ref = menu.dataset.ref;
+                const first = menu.dataset.first;
+                const last = menu.dataset.last;
+                closeAllDropdowns();
+                openFeedback(ref, first, last);
+                e.stopPropagation();
+                return;
+            }
+
+            // Close if clicking outside any dropdown
+            if (!e.target.closest('.action-dropdown')) {
+                closeAllDropdowns();
+            }
+        });
+
+        // ---- SEARCH ----
+        function filterTable(inputId, tableId) {
+            const val = document.getElementById(inputId).value.toLowerCase();
+            document.querySelectorAll(`#${tableId} tbody tr`).forEach(row => {
+                const text = row.textContent.toLowerCase();
+                row.style.display = text.includes(val) ? '' : 'none';
+            });
+        }
+
+        document.getElementById('active-search').addEventListener('input', () => filterTable('active-search', 'active-table'));
+        document.getElementById('cand-search').addEventListener('input', () => filterTable('cand-search', 'cand-table'));
+    </script>
+</body>
+</html>

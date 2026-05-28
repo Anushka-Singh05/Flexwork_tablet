@@ -1,0 +1,1511 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Employer Agents</title>
+
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+  />
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: "Segoe UI", sans-serif;
+    }
+
+    body {
+      background: #f7f6fc;
+      color: #1e1e1e;
+      overflow-x: hidden;
+    }
+
+    .container {
+      display: flex;
+      height: 100vh;
+      width: 100vw;
+      overflow: hidden;
+    }
+
+    /* SIDEBAR */
+    .sidebar {
+      width: 260px;
+      background: #fff;
+      border-right: 1px solid #ececf2;
+      padding: 22px 14px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      flex-shrink: 0;
+      z-index: 100;
+    }
+
+    /* Collapsed Sidebar State */
+    .sidebar.collapsed {
+      width: 78px;
+      padding: 22px 10px;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-left: 12px;
+      padding-right: 4px;
+      height: 40px;
+      overflow: hidden;
+      width: 100%;
+    }
+
+    .logo img {
+      width: 145px;
+      transition: transform 0.3s ease, width 0.3s ease;
+    }
+
+    .sidebar.collapsed .logo img {
+      transform: scale(0);
+      width: 0;
+    }
+
+    .sidebar.collapsed .logo .menu-toggle {
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .menu {
+      margin-top: 25px;
+    }
+
+    .menu-item {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 13px 12px;
+      border-radius: 12px;
+      font-size: 16px;
+      color: #1f1f1f;
+      margin-bottom: 6px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      white-space: nowrap;
+      position: relative;
+    }
+
+    .menu-item:hover {
+      background: #f5f4fa;
+    }
+
+    /* Active Highlight States */
+    .menu-item.active-tab {
+      background: #ffdd00 !important;
+      font-weight: 600;
+      color: #000;
+    }
+    
+    .menu-item.active-tab i,
+    .menu-item.active-tab svg {
+      color: #000 !important;
+      fill: #000 !important;
+    }
+
+    .menu-item i, 
+    .menu-item svg.menu-icon {
+      width: 22px;
+      height: 22px;
+      color: #333;
+      fill: #333;
+      font-size: 18px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: color 0.3s;
+    }
+
+    .menu-item span {
+      transition: opacity 0.2s ease;
+      opacity: 1;
+    }
+
+    /* Rotation indicator logic */
+    .menu-item i.fa-chevron-down {
+      transition: transform 0.2s ease, opacity 0.2s ease;
+    }
+    .menu-item.dropdown-open i.fa-chevron-down {
+      transform: rotate(180deg);
+    }
+
+    .sidebar.collapsed .menu-item span,
+    .sidebar.collapsed .menu-item i.fa-chevron-down {
+      opacity: 0;
+      pointer-events: none;
+      width: 0;
+    }
+
+    /* SUBMENU */
+    .submenu {
+      margin-left: 22px;
+      margin-top: 2px;
+      margin-bottom: 10px;
+      border-left: 2px solid #ececf2;
+      padding-left: 14px;
+      max-height: 0;
+      opacity: 0;
+      overflow: hidden;
+      transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s ease;
+    }
+
+    .submenu.open {
+      max-height: 200px; 
+      opacity: 1;
+    }
+
+    .sidebar.collapsed .submenu {
+      max-height: 0 !important;
+      opacity: 0 !important;
+      margin: 0;
+      padding: 0;
+      border: none;
+    }
+
+    .submenu-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 8px 0;
+      font-size: 15px;
+      color: #808080;
+      cursor: pointer;
+      position: relative;
+      transition: color 0.2s;
+    }
+    
+    .submenu-item:hover {
+      color: #4c2fff;
+    }
+
+    .submenu-item.active {
+      color: #4c2fff;
+      font-weight: 600;
+    }
+
+    .sidebar-bottom img {
+      width: 100%;
+      max-width: 120px;
+      margin: auto;
+      display: block;
+      transition: all 0.3s;
+    }
+
+    .sidebar.collapsed .sidebar-bottom img {
+      max-width: 40px;
+      border-radius: 50%;
+    }
+
+    /* MAIN PANEL */
+    .main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+
+    /* HEADER */
+    .header {
+      height: 78px;
+      background: #fff;
+      border-bottom: 1px solid #ececf2;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 30px;
+      flex-shrink: 0;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+    }
+
+    .menu-toggle {
+      font-size: 22px;
+      cursor: pointer;
+      color: #3f3f3f;
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      transition: background 0.2s;
+      flex-shrink: 0;
+    }
+
+    .menu-toggle:hover {
+      background: #eee;
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+    }
+
+    .header-icon {
+      position: relative;
+      color: #4c2fff;
+      font-size: 20px;
+      cursor: pointer;
+    }
+
+    .notification-dot {
+      width: 8px;
+      height: 8px;
+      background: #ff4d4d;
+      border-radius: 50%;
+      position: absolute;
+      top: -2px;
+      right: -2px;
+    }
+
+    .profile {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .profile img {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      object-fit: cover;
+    }
+
+    .profile-info h4 {
+      font-size: 15px;
+      color: #4c2fff;
+      font-weight: 600;
+    }
+
+    .profile-info p {
+      font-size: 12px;
+      color: #6c6c6c;
+    }
+
+    .dropdown {
+      width: 32px;
+      height: 32px;
+      border: 1px solid #ececf2;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #555;
+      cursor: pointer;
+      font-size: 12px;
+    }
+
+    /* MAIN CONTENT VIEW */
+    .content {
+      padding: 30px 32px;
+      overflow-y: auto;
+      flex: 1;
+    }
+
+    .title {
+      font-size: 32px;
+      font-weight: 700;
+      margin-bottom: 24px;
+    }
+
+    .top-actions {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    .search-filter {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+      flex: 1;
+      max-width: 600px;
+      position: relative;
+    }
+
+    .search-box {
+      flex: 1;
+      min-width: 260px;
+      height: 50px;
+      background: #fff;
+      border: 1px solid #ececf2;
+      border-radius: 25px;
+      display: flex;
+      align-items: center;
+      padding: 0 18px;
+      gap: 12px;
+    }
+
+    .search-box input {
+      border: none;
+      outline: none;
+      flex: 1;
+      font-size: 14px;
+      color: #333;
+    }
+
+    .search-box i {
+      color: #7d7d7d;
+      font-size: 15px;
+    }
+
+    .filter-wrapper {
+      position: relative;
+    }
+
+    .filter-btn {
+      height: 50px;
+      padding: 0 22px;
+      border: 1px solid #ececf2;
+      border-radius: 14px;
+      background: #fff;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s, border-color 0.2s;
+    }
+
+    .filter-btn:hover {
+      background: #fcfcfc;
+    }
+
+    .filter-btn.active {
+      border-color: #5c3eff;
+      color: #5c3eff;
+    }
+
+    /* FILTER DROPDOWN CONTAINER */
+    .filter-dropdown {
+      position: absolute;
+      top: 56px;
+      right: 0;
+      width: 280px;
+      background: #fff;
+      border: 1px solid #ececf2;
+      border-radius: 14px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+      padding: 20px;
+      z-index: 500;
+      display: none;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .filter-dropdown.show {
+      display: flex;
+    }
+
+    .filter-dropdown-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .filter-dropdown-group label {
+      font-size: 12px;
+      font-weight: 600;
+      color: #666;
+    }
+
+    .filter-dropdown-group select {
+      height: 40px;
+      border: 1px solid #dcdce6;
+      border-radius: 8px;
+      padding: 0 12px;
+      font-size: 14px;
+      outline: none;
+      color: #333;
+      background: #fff;
+    }
+
+    .filter-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 6px;
+    }
+
+    .btn-filter-reset {
+      font-size: 13px;
+      color: #888;
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    .btn-filter-apply {
+      padding: 8px 16px;
+      background: #5c3eff;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .add-btn {
+      padding: 0 24px;
+      height: 50px;
+      border: none;
+      border-radius: 14px;
+      background: #5c3eff;
+      color: #fff;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      box-shadow: 0 6px 20px rgba(92, 62, 255, 0.25);
+      transition: background 0.2s, transform 0.1s;
+    }
+
+    .add-btn:hover {
+      background: #4627eb;
+    }
+    
+    .add-btn:active {
+      transform: scale(0.98);
+    }
+
+    /* DATA TABLE MODULE */
+    .table-container {
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 4px 18px rgba(0, 0, 0, 0.02);
+      border: 1px solid #ececf2;
+      overflow: hidden;
+    }
+
+    .table-responsive {
+      width: 100%;
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 800px;
+    }
+
+    thead {
+      background: #f3f0ff;
+    }
+
+    thead th {
+      padding: 16px 20px;
+      text-align: left;
+      font-size: 14px;
+      color: #4c2fff;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    tbody td {
+      padding: 24px 20px;
+      font-size: 14px;
+      color: #333;
+      border-bottom: 1px solid #f8f8fc;
+      white-space: nowrap;
+    }
+
+    .action-container {
+      position: relative;
+    }
+
+    .action-menu-btn {
+      color: #666;
+      font-size: 18px;
+      cursor: pointer;
+      width: 32px;
+      height: 32px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      transition: background 0.2s;
+    }
+
+    .action-menu-btn:hover {
+      background: #eee;
+    }
+
+    /* ACTION DROPDOWN POPUP MENU */
+    .action-dropdown {
+      position: fixed;
+      background: #fff;
+      border: 1px solid #ececf2;
+      border-radius: 8px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.12);
+      z-index: 9999; 
+      display: none;
+      flex-direction: column;
+      min-width: 120px;
+      overflow: hidden;
+    }
+
+    .action-dropdown.show {
+      display: flex;
+    }
+
+    .action-dropdown-item {
+      padding: 12px 16px;
+      font-size: 14px;
+      color: #333;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      transition: background 0.2s;
+    }
+
+    .action-dropdown-item:hover {
+      background: #f5f5fc;
+    }
+
+    .table-footer {
+      padding: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 16px;
+      border-top: 1px solid #ececf2;
+    }
+
+    .entries {
+      color: #666;
+      font-size: 14px;
+    }
+
+    .pagination {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .page-btn {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      border: 1px solid #ececf2;
+      background: #fff;
+      color: #333;
+      font-size: 14px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+    }
+
+    .page-btn:hover {
+      background: #f5f4fa;
+    }
+
+    .page-btn.active {
+      background: #4c2fff;
+      color: #fff;
+      border-color: #4c2fff;
+    }
+
+    .page-size {
+      height: 36px;
+      border: 1px solid #ececf2;
+      border-radius: 8px;
+      padding: 0 12px;
+      background: #fff;
+      font-size: 14px;
+      color: #333;
+      outline: none;
+    }
+
+    /* FLOATING CHAT BUTTON */
+    .chat-btn {
+      position: fixed;
+      right: 24px;
+      bottom: 24px;
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background: #4c2fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: 22px;
+      box-shadow: 0 8px 20px rgba(76, 47, 255, 0.3);
+      cursor: pointer;
+      z-index: 999;
+      transition: transform 0.2s;
+    }
+    
+    .chat-btn:hover {
+      transform: scale(1.05);
+    }
+
+    /* SIDE-SHEET MODAL DESIGN */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(15, 14, 28, 0.4);
+      backdrop-filter: blur(4px);
+      display: none;
+      align-items: center;
+      justify-content: flex-end;
+      z-index: 2000;
+      transition: all 0.3s ease;
+    }
+
+    .modal-overlay.show {
+      display: flex;
+    }
+
+    .modal-content {
+      background: #fff;
+      width: 100%;
+      max-width: 540px;
+      height: 100%;
+      box-shadow: -10px 0 40px rgba(0,0,0,0.08);
+      display: flex;
+      flex-direction: column;
+      transform: translateX(100%);
+      transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .modal-overlay.show .modal-content {
+      transform: translateX(0);
+    }
+
+    .modal-header {
+      padding: 24px 30px;
+      border-bottom: 1px solid #ececf2;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .modal-header h2 {
+      font-size: 20px;
+      font-weight: 600;
+      color: #1a1a1a;
+    }
+
+    .modal-close {
+      font-size: 20px;
+      cursor: pointer;
+      color: #999;
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      transition: background 0.2s;
+    }
+    
+    .modal-close:hover {
+      background: #f5f5f7;
+      color: #333;
+    }
+
+    .modal-body {
+      padding: 30px;
+      flex: 1;
+      overflow-y: auto;
+    }
+
+    .form-layout {
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    .form-row-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .form-group label {
+      font-size: 13px;
+      font-weight: 600;
+      color: #4a4a4a;
+    }
+
+    .form-group label span {
+      color: #ff4d4d;
+      margin-left: 2px;
+    }
+
+    .form-group input, .form-group select {
+      height: 46px;
+      border: 1px solid #dcdce6;
+      border-radius: 10px;
+      padding: 0 16px;
+      font-size: 14px;
+      outline: none;
+      color: #222;
+      background: #fff;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .form-group input:focus {
+      border-color: #5c3eff;
+      box-shadow: 0 0 0 3px rgba(92, 62, 255, 0.12);
+    }
+
+    .tel-input-wrapper {
+      display: flex;
+      border: 1px solid #dcdce6;
+      border-radius: 10px;
+      overflow: hidden;
+      background: #fff;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    
+    .tel-input-wrapper:focus-within {
+      border-color: #5c3eff;
+      box-shadow: 0 0 0 3px rgba(92, 62, 255, 0.12);
+    }
+
+    .tel-input-wrapper select {
+      border: none;
+      border-right: 1px solid #dcdce6;
+      border-radius: 0;
+      background: #f8f8fa;
+      padding: 0 12px;
+      height: 44px;
+      font-size: 14px;
+    }
+
+    .tel-input-wrapper input {
+      border: none;
+      flex: 1;
+      height: 44px;
+    }
+    
+    .tel-input-wrapper input:focus {
+      box-shadow: none;
+    }
+
+    .modal-footer {
+      padding: 20px 30px;
+      border-top: 1px solid #ececf2;
+      display: flex;
+      justify-content: flex-end;
+      gap: 12px;
+      background: #fafafa;
+    }
+
+    .btn-cancel {
+      padding: 0 20px;
+      height: 44px;
+      background: #fff;
+      border: 1px solid #dcdce6;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      color: #555;
+      transition: background 0.2s;
+    }
+    
+    .btn-cancel:hover {
+      background: #f5f5f7;
+    }
+
+    .btn-save {
+      padding: 0 24px;
+      height: 44px;
+      background: #5c3eff;
+      border: none;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 600;
+      color: #fff;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(92, 62, 255, 0.2);
+      transition: background 0.2s;
+    }
+
+    .btn-save:hover {
+      background: #4627eb;
+    }
+
+    /* ── TABLET HAMBURGER (hidden on desktop) ── */
+    .tablet-hamburger { display: none; }
+
+    /* ── SIDEBAR OVERLAY ── */
+    .sidebar-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.35);
+      z-index: 998;
+    }
+    .sidebar-overlay.show { display: block; }
+
+    /* ── ICON RAIL TOOLTIP ── */
+    .nav-tooltip {
+      display: none;
+      position: absolute;
+      left: calc(100% + 12px);
+      top: 50%;
+      transform: translateY(-50%);
+      background: #222;
+      color: #fff;
+      font-size: 12px;
+      font-weight: 500;
+      padding: 5px 10px;
+      border-radius: 6px;
+      white-space: nowrap;
+      z-index: 9999;
+      pointer-events: none;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+    }
+    .nav-tooltip::before {
+      content: '';
+      position: absolute;
+      right: 100%; top: 50%;
+      transform: translateY(-50%);
+      border: 5px solid transparent;
+      border-right-color: #222;
+    }
+
+    /* ── STYLED TABLE SCROLLBAR ── */
+    .table-responsive::-webkit-scrollbar { height: 7px; }
+    .table-responsive::-webkit-scrollbar-track { background: #f1f0fb; border-radius: 10px; }
+    .table-responsive::-webkit-scrollbar-thumb { background: #c4bdf5; border-radius: 10px; cursor: grab; }
+    .table-responsive::-webkit-scrollbar-thumb:hover { background: #5c3eff; }
+
+    /* ═══════════════════════════════════════════════════════════
+       LARGE TABLETS  768px – 1024px
+       FIX: Sidebar is ALWAYS position:fixed — never in doc flow.
+            main gets a fixed margin-left:64px (the icon-rail width)
+            so it never shifts when sidebar expands or collapses.
+       ═══════════════════════════════════════════════════════════ */
+    @media (max-width: 1024px) and (min-width: 768px) {
+
+      /* Always fixed, always 64px — out of flow, zero gap */
+      .sidebar {
+        position: fixed !important;
+        left: 0; top: 0; bottom: 0;
+        width: 64px !important;
+        padding: 18px 0 !important;
+        overflow: visible;
+        z-index: 999;
+        transition: width 0.28s ease, padding 0.28s ease, box-shadow 0.28s ease;
+      }
+
+      /* Main offset = icon rail width, never changes → no shift on open */
+      .main {
+        margin-left: 64px !important;
+        width: calc(100vw - 64px) !important;
+        flex: none !important;
+      }
+
+      /* Logo: hide text, centre toggle */
+      .sidebar .logo {
+        padding: 0;
+        justify-content: center;
+        overflow: hidden;
+      }
+      .sidebar .logo img { width: 0 !important; opacity: 0; }
+      .sidebar .logo .menu-toggle { margin: 0 auto; }
+
+      /* Menu items: icon-only, centred */
+      .sidebar .menu-item {
+        justify-content: center !important;
+        padding: 14px 0 !important;
+        gap: 0 !important;
+        overflow: visible;
+        position: relative;
+      }
+      /* Hide text labels & chevron */
+      .sidebar .menu-item > span:not(.nav-tooltip),
+      .sidebar .menu-item > i.fa-chevron-down { display: none !important; }
+
+      /* Tooltip on hover */
+      .sidebar .menu-item:hover .nav-tooltip { display: block; }
+
+      /* Submenu hidden in rail */
+      .sidebar .submenu {
+        max-height: 0 !important;
+        opacity: 0 !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        border: none !important;
+        overflow: hidden !important;
+      }
+
+      /* Small avatar */
+      .sidebar .sidebar-bottom img { max-width: 36px !important; border-radius: 50% !important; }
+
+      /* ── EXPANDED: sidebar grows wider, main stays put ── */
+      .sidebar.tablet-open {
+        width: 240px !important;
+        padding: 20px 12px !important;
+        box-shadow: 4px 0 28px rgba(0,0,0,0.13);
+        overflow: hidden;
+      }
+      .sidebar.tablet-open .logo {
+        padding-left: 8px;
+        justify-content: space-between;
+        overflow: visible;
+      }
+      .sidebar.tablet-open .logo img { width: 130px !important; opacity: 1 !important; }
+      .sidebar.tablet-open .logo .menu-toggle { margin: 0; }
+      .sidebar.tablet-open .menu-item {
+        justify-content: flex-start !important;
+        padding: 13px 12px !important;
+        gap: 14px !important;
+      }
+      .sidebar.tablet-open .menu-item > span:not(.nav-tooltip),
+      .sidebar.tablet-open .menu-item > i.fa-chevron-down {
+        display: inline-flex !important;
+        opacity: 1; width: auto;
+      }
+      .sidebar.tablet-open .menu-item:hover .nav-tooltip { display: none !important; }
+      /* Show submenu when .open class is toggled */
+      .sidebar.tablet-open .submenu.open {
+        max-height: 200px !important;
+        opacity: 1 !important;
+        overflow: visible !important;
+      }
+      .sidebar.tablet-open .sidebar-bottom img { max-width: 110px !important; border-radius: 0 !important; }
+
+      .header { padding: 0 20px; }
+      .content { padding: 22px 20px; }
+      .title { font-size: 26px; }
+      thead th { padding: 13px 13px; font-size: 13px; }
+      tbody td  { padding: 16px 13px; font-size: 13px; }
+    }
+
+    /* ═══════════════════════════════════════════════════════════
+       SMALL TABLETS & MOBILE  < 768px
+       Full off-canvas drawer. No margin on main.
+       ═══════════════════════════════════════════════════════════ */
+    @media (max-width: 767px) {
+
+      .tablet-hamburger { display: flex; }
+
+      .sidebar {
+        position: fixed !important;
+        left: 0; top: 0; bottom: 0;
+        width: 260px !important;
+        transform: translateX(-100%) !important;
+        z-index: 999;
+        padding: 22px 14px !important;
+        overflow: hidden;
+        transition: transform 0.28s ease !important;
+        box-shadow: none;
+      }
+      .sidebar.drawer-open {
+        transform: translateX(0) !important;
+        box-shadow: 4px 0 24px rgba(0,0,0,0.16);
+      }
+
+      /* Full labels inside drawer */
+      .sidebar .logo { padding-left: 12px !important; justify-content: space-between !important; overflow: visible !important; }
+      .sidebar .logo img { width: 145px !important; opacity: 1 !important; }
+      .sidebar .menu-item { justify-content: flex-start !important; padding: 13px 12px !important; gap: 14px !important; }
+      .sidebar .menu-item > span:not(.nav-tooltip),
+      .sidebar .menu-item > i.fa-chevron-down { display: inline-flex !important; opacity: 1 !important; }
+      .sidebar .sidebar-bottom img { max-width: 120px !important; border-radius: 0 !important; }
+
+      /* No margin — sidebar is out of flow */
+      .main { margin-left: 0 !important; width: 100% !important; flex: none !important; }
+
+      .header { padding: 0 16px; height: 64px; }
+      .content { padding: 18px 16px; }
+      .title { font-size: 22px; margin-bottom: 16px; }
+      .profile-info { display: none; }
+
+      thead th { padding: 12px 11px; font-size: 12.5px; }
+      tbody td  { padding: 14px 11px; font-size: 12.5px; }
+
+      .add-btn { padding: 0 16px; height: 46px; font-size: 14px; }
+      .filter-btn { height: 46px; }
+      .table-footer { padding: 14px 16px; }
+      .chat-btn { right: 16px; bottom: 16px; width: 52px; height: 52px; font-size: 18px; }
+      .modal-content { max-width: 100%; }
+    }
+
+    /* ═══════════════════════════════════════════════════════════
+       PHONES < 600px — stack actions vertically
+       ═══════════════════════════════════════════════════════════ */
+    @media (max-width: 599px) {
+      .top-actions { flex-direction: column; align-items: stretch; }
+      .add-btn { width: 100%; justify-content: center; }
+      .filter-wrapper { width: 100%; }
+      .filter-btn { width: 100%; justify-content: center; }
+      .filter-dropdown { width: 100%; left: 0; right: 0; }
+      .form-row-2 { grid-template-columns: 1fr; gap: 20px; }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+  <div class="container">
+
+    <aside class="sidebar" id="sidebar">
+      <div>
+        <div class="logo">
+          <img src="logo.png" alt="Flexwork" />
+          <div class="menu-toggle" id="menuToggleBtn">
+            <i class="fa-solid fa-bars"></i>
+          </div>
+        </div>
+
+        <div class="menu">
+          <div class="menu-item">
+            <i class="fa-solid fa-table-cells-large"></i>
+            <span>Dashboard</span>
+            <span class="nav-tooltip">Dashboard</span>
+          </div>
+
+          <div class="menu-item active-tab">
+            <svg class="menu-icon" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12.5 16a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7m.5-5v1h1a.5.5 0 0 1 0 1h-1v1a.5.5 0 0 1-1 0v-1h-1a.5.5 0 0 1 0-1h1v-1a.5.5 0 0 1 1 0m-2-6a3 3 0 1 1-6 0 3 3 0 0 1 6 0"/>
+              <path d="M2 13c0 1 1 1 1 1h5.256A4.5 4.5 0 0 1 8 12.5a4.5 4.5 0 0 1 1.544-3.393Q8.844 9.002 8 9c-5 0-6 3-6 4"/>
+            </svg>
+            <span>Agent</span>
+            <span class="nav-tooltip">Agent</span>
+          </div>
+
+          <div class="menu-item" id="servicesMenuToggle">
+            <svg class="menu-icon" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+              <path d="M8.186 1.113a.5.5 0 0 0-.372 0L1.846 3.5l2.404.961L10.404 2zm3.564 1.426L5.596 5 8 5.961 14.154 3.5zm3.25 1.7-6.5 2.6v7.922l6.5-2.6V4.24zM7.5 14.748V6.836L1 4.24v7.922zm.362-13.048a1.5 1.5 0 0 1 .114 0z"/>
+            </svg>
+            <span>Our Services</span>
+            <i class="fa-solid fa-chevron-down" style="margin-left:auto; font-size:12px;"></i>
+            <span class="nav-tooltip">Our Services</span>
+          </div>
+
+          <div class="submenu" id="servicesSubmenu">
+            <div class="submenu-item">Interview Panel</div>
+            <div class="submenu-item">Consultant</div>
+            <div class="submenu-item">Trainer</div>
+          </div>
+
+          <div class="menu-item">
+            <svg class="menu-icon" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+              <path d="M3 4.5a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9a.5.5 0 0 1-.5-.5m0 2a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9a.5.5 0 0 1-.5-.5m0 2a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9a.5.5 0 0 1-.5-.5m0 2a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9a.5.5 0 0 1-.5-.5m0 2a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5"/>
+              <path d="M2 1a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v14a1 1 0 0 1-1.6.8l-1.4-1.05-1.4 1.05a1 1 0 0 1-1.2 0L8 14.25l-1.4 1.05a1 1 0 0 1-1.2 0L4 14.25l-1.4 1.05A1 1 0 0 1 2 14.4zm1 0v12.62l1.6-.4a1 1 0 0 1 1.2 0l1.4 1.05 1.4-1.05a1 1 0 0 1 1.2 0l1.4 1.05 1.4-1.05a1 1 0 0 1 .6.4V1z"/>
+            </svg>
+            <span>Invoices</span>
+            <span class="nav-tooltip">Invoices</span>
+          </div>
+
+          <div class="menu-item">
+            <i class="fa-solid fa-wallet"></i>
+            <span>Payments</span>
+            <span class="nav-tooltip">Payments</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="sidebar-bottom">
+        <img src="https://cdn-icons-png.flaticon.com/512/4140/4140048.png" alt="Profile Vector" />
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="header">
+        <div class="header-left">
+          <!-- Hamburger visible only on small tablets/phones via CSS -->
+          <div class="menu-toggle tablet-hamburger" id="tabletHamburgerBtn">
+            <i class="fa-solid fa-bars"></i>
+          </div>
+        </div>
+
+        <div class="header-right">
+          <div class="header-icon"><i class="fa-regular fa-envelope"></i></div>
+          <div class="header-icon">
+            <i class="fa-regular fa-bell"></i>
+            <div class="notification-dot"></div>
+          </div>
+
+          <div class="profile">
+            <img src="https://randomuser.me/api/portraits/women/44.jpg" alt="User Headshot" />
+            <div class="profile-info">
+              <h4>Hello Christeena</h4>
+              <p>FW-EMPR22</p>
+            </div>
+            <div class="dropdown"><i class="fa-solid fa-chevron-down"></i></div>
+          </div>
+        </div>
+      </header>
+
+      <section class="content">
+        <h1 class="title">Employer Agents</h1>
+
+        <div class="top-actions">
+          <div class="search-filter">
+            <div class="search-box">
+              <i class="fa-solid fa-magnifying-glass"></i>
+              <input type="text" placeholder="Search Employer Agents" />
+            </div>
+            <div class="filter-wrapper">
+              <button class="filter-btn" id="filterBtn">Filter <i class="fa-solid fa-filter"></i></button>
+              
+              <div class="filter-dropdown" id="filterDropdown">
+                <div class="filter-dropdown-group">
+                  <label>Location</label>
+                  <select id="filterLocation">
+                    <option value="">All Locations</option>
+                    <option value="chennai">Chennai</option>
+                    <option value="delhi">Delhi</option>
+                    <option value="mumbai">Mumbai</option>
+                  </select>
+                </div>
+                <div class="filter-dropdown-group">
+                  <label>Status</label>
+                  <select id="filterStatus">
+                    <option value="">All Statuses</option>
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                  </select>
+                </div>
+                <div class="filter-actions">
+                  <button class="btn-filter-reset" id="filterResetBtn">Reset</button>
+                  <button class="btn-filter-apply" id="filterApplyBtn">Apply</button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <button class="add-btn" id="addAgentBtn">Add <i class="fa-solid fa-plus"></i></button>
+        </div>
+
+        <div class="table-container">
+          <div class="table-responsive">
+            <table>
+              <thead>
+                <tr>
+                  <th>User Id ↕</th>
+                  <th>Firstname ↕</th>
+                  <th>Lastname ↕</th>
+                  <th>Email ↕</th>
+                  <th>Mobile ↕</th>
+                  <th>Location ↕</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="agentTableBody">
+                <tr id="row-3083">
+                  <td class="cell-id">3083</td>
+                  <td class="cell-firstname">Mary</td>
+                  <td class="cell-lastname">Therisa</td>
+                  <td class="cell-email">Mary.t@flex-work.in</td>
+                  <td class="cell-mobile">+91 85784 56231</td>
+                  <td class="cell-location">Chennai</td>
+                  <td class="action-container">
+                    <div class="action-menu-btn">
+                      <i class="fa-solid fa-ellipsis-vertical"></i>
+                    </div>
+                    <div class="action-dropdown" id="actionDropdown">
+                      <div class="action-dropdown-item" id="openEditModalBtn">
+                        <i class="fa-regular fa-pen-to-square"></i> Edit
+                      </div>
+                      <div class="action-dropdown-item" style="color: #ff4d4d;">
+                        <i class="fa-regular fa-trash-can"></i> Delete
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="table-footer">
+            <div class="entries">Showing 1 to 1 of 1 entries</div>
+            <div class="pagination">
+              <button class="page-btn"><i class="fa-solid fa-chevron-left"></i></button>
+              <button class="page-btn active">1</button>
+              <button class="page-btn"><i class="fa-solid fa-chevron-right"></i></button>
+              <select class="page-size">
+                <option>10 / page</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div class="chat-btn"><i class="fa-solid fa-comments"></i></div>
+
+  <div class="modal-overlay" id="agentModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 id="modalTitle">Create Agent</h2>
+        <i class="fa-solid fa-xmark modal-close" id="closeModalBtn"></i>
+      </div>
+      <div class="modal-body">
+        <div class="form-layout">
+          <div class="form-row-2">
+            <div class="form-group">
+              <label>First Name <span>*</span></label>
+              <input type="text" id="formFirstName" placeholder="Enter first name" />
+            </div>
+            <div class="form-group">
+              <label>Last Name <span>*</span></label>
+              <input type="text" id="formLastName" placeholder="Enter last name" />
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Email address <span>*</span></label>
+            <input type="email" id="formEmail" placeholder="Enter email address" />
+          </div>
+          <div class="form-group">
+            <label>Contact Number <span>*</span></label>
+            <div class="tel-input-wrapper">
+              <select id="formCountryCode">
+                <option value="+91">🇮🇳 +91</option>
+              </select>
+              <input type="tel" id="formPhone" placeholder="Contact number" />
+            </div>
+          </div>
+          <div class="form-group">
+            <label>City <span>*</span> <i class="fa-regular fa-circle-question" style="color: #888;"></i></label>
+            <input type="text" id="formCity" placeholder="Enter city location" />
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-cancel" id="cancelModalBtn">Cancel</button>
+        <button class="btn-save" id="saveModalBtn">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const sidebar          = document.getElementById('sidebar');
+    const menuToggleBtn    = document.getElementById('menuToggleBtn');    // inside sidebar
+    const tabletHamburger  = document.getElementById('tabletHamburgerBtn'); // in header
+    const sidebarOverlay   = document.getElementById('sidebarOverlay');
+    const actionDropdown   = document.getElementById('actionDropdown');
+    const agentTableBody   = document.getElementById('agentTableBody');
+    const filterBtn        = document.getElementById('filterBtn');
+    const filterDropdown   = document.getElementById('filterDropdown');
+    const filterResetBtn   = document.getElementById('filterResetBtn');
+    const filterApplyBtn   = document.getElementById('filterApplyBtn');
+    const servicesMenuToggle = document.getElementById('servicesMenuToggle');
+    const servicesSubmenu    = document.getElementById('servicesSubmenu');
+    const agentModal       = document.getElementById('agentModal');
+    const addAgentBtn      = document.getElementById('addAgentBtn');
+    const openEditModalBtn = document.getElementById('openEditModalBtn');
+    const closeModalBtn    = document.getElementById('closeModalBtn');
+    const cancelModalBtn   = document.getElementById('cancelModalBtn');
+    const saveModalBtn     = document.getElementById('saveModalBtn');
+    const modalTitle       = document.getElementById('modalTitle');
+    const formFirstName    = document.getElementById('formFirstName');
+    const formLastName     = document.getElementById('formLastName');
+    const formEmail        = document.getElementById('formEmail');
+    const formPhone        = document.getElementById('formPhone');
+    const formCountryCode  = document.getElementById('formCountryCode');
+    const formCity         = document.getElementById('formCity');
+
+    let currentActionBtn = null;
+    let currentRow = null;
+    let modalMode = 'create';
+
+    // ── Breakpoint helpers ──────────────────────────────────────
+    const isLargeTablet = () => window.innerWidth >= 768 && window.innerWidth <= 1024;
+    const isSmallTablet = () => window.innerWidth < 768;
+
+    // ── Overlay helpers ─────────────────────────────────────────
+    const showOverlay = () => sidebarOverlay.classList.add('show');
+    const hideOverlay = () => sidebarOverlay.classList.remove('show');
+
+    // ── Close all sidebar states ────────────────────────────────
+    const closeSidebar = () => {
+      sidebar.classList.remove('tablet-open', 'drawer-open', 'collapsed');
+      hideOverlay();
+    };
+
+    // ── 1. In-sidebar ☰ toggle ──────────────────────────────────
+    menuToggleBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (isLargeTablet()) {
+        // Toggle floating expanded panel
+        const isOpen = sidebar.classList.contains('tablet-open');
+        if (isOpen) {
+          sidebar.classList.remove('tablet-open');
+          hideOverlay();
+        } else {
+          sidebar.classList.add('tablet-open');
+          showOverlay();
+        }
+      } else if (!isSmallTablet()) {
+        // Desktop collapse
+        sidebar.classList.toggle('collapsed');
+        if (sidebar.classList.contains('collapsed')) {
+          servicesMenuToggle.classList.remove('dropdown-open');
+          servicesSubmenu.classList.remove('open');
+        }
+      }
+    });
+
+    // ── 2. Header hamburger (small tablet / phone) ──────────────
+    tabletHamburger && tabletHamburger.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const isOpen = sidebar.classList.contains('drawer-open');
+      if (isOpen) {
+        sidebar.classList.remove('drawer-open');
+        hideOverlay();
+      } else {
+        sidebar.classList.add('drawer-open');
+        showOverlay();
+      }
+    });
+
+    // ── 3. Overlay click closes sidebar ─────────────────────────
+    sidebarOverlay.addEventListener('click', closeSidebar);
+
+    // ── 4. Our Services submenu ──────────────────────────────────
+    servicesMenuToggle.addEventListener('click', (e) => {
+      e.stopPropagation();
+      // Block when icon rail (large tablet, not open)
+      if (isLargeTablet() && !sidebar.classList.contains('tablet-open')) return;
+      // Block when desktop collapsed
+      if (!isSmallTablet() && !isLargeTablet() && sidebar.classList.contains('collapsed')) return;
+      servicesMenuToggle.classList.toggle('dropdown-open');
+      servicesSubmenu.classList.toggle('open');
+    });
+
+    // ── 5. Filter dropdown ───────────────────────────────────────
+    filterBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const open = filterDropdown.classList.contains('show');
+      filterDropdown.classList.toggle('show', !open);
+      filterBtn.classList.toggle('active', !open);
+    });
+    filterResetBtn.addEventListener('click', () => {
+      document.getElementById('filterLocation').value = '';
+      document.getElementById('filterStatus').value = '';
+      filterDropdown.classList.remove('show');
+      filterBtn.classList.remove('active');
+    });
+    filterApplyBtn.addEventListener('click', () => {
+      filterDropdown.classList.remove('show');
+      filterBtn.classList.remove('active');
+    });
+
+    // ── 6. Global click: close dropdowns ────────────────────────
+    document.addEventListener('click', (e) => {
+      if (currentActionBtn && !currentActionBtn.contains(e.target))
+        actionDropdown.classList.remove('show');
+      if (!filterBtn.contains(e.target) && !filterDropdown.contains(e.target)) {
+        filterDropdown.classList.remove('show');
+        filterBtn.classList.remove('active');
+      }
+    });
+
+    // ── 7. Action menu (⋮ per row) ───────────────────────────────
+    agentTableBody.addEventListener('click', (e) => {
+      const btn = e.target.closest('.action-menu-btn');
+      if (!btn) return;
+      e.stopPropagation();
+      currentActionBtn = btn;
+      currentRow = btn.closest('tr');
+      const visible = actionDropdown.classList.contains('show');
+      if (visible) {
+        actionDropdown.classList.remove('show');
+      } else {
+        const rect = btn.getBoundingClientRect();
+        actionDropdown.style.top  = `${rect.bottom + 6}px`;
+        actionDropdown.style.left = `${rect.left - 90}px`;
+        actionDropdown.classList.add('show');
+      }
+    });
+
+    document.querySelector('.table-responsive').addEventListener('scroll', () => {
+      actionDropdown.classList.remove('show');
+    });
+
+    // ── 8. Add Agent modal ───────────────────────────────────────
+    addAgentBtn.addEventListener('click', () => {
+      modalMode = 'create';
+      modalTitle.innerText = 'Create Agent';
+      saveModalBtn.innerText = 'Save';
+      formFirstName.value = formLastName.value = formEmail.value = formPhone.value = formCity.value = '';
+      currentRow = null;
+      agentModal.style.display = 'flex';
+      setTimeout(() => agentModal.classList.add('show'), 10);
+    });
+
+    // ── 9. Edit Agent modal ──────────────────────────────────────
+    openEditModalBtn.addEventListener('click', () => {
+      if (!currentRow) return;
+      modalMode = 'edit';
+      actionDropdown.classList.remove('show');
+      modalTitle.innerText = 'Edit Agent';
+      saveModalBtn.innerText = 'Save Changes';
+      formFirstName.value = currentRow.querySelector('.cell-firstname').innerText;
+      formLastName.value  = currentRow.querySelector('.cell-lastname').innerText;
+      formEmail.value     = currentRow.querySelector('.cell-email').innerText;
+      formCity.value      = currentRow.querySelector('.cell-location').innerText;
+      formPhone.value     = currentRow.querySelector('.cell-mobile').innerText.replace('+91','').trim();
+      agentModal.style.display = 'flex';
+      setTimeout(() => agentModal.classList.add('show'), 10);
+    });
+
+    // ── 10. Save modal ───────────────────────────────────────────
+    saveModalBtn.addEventListener('click', () => {
+      if (modalMode === 'edit' && currentRow) {
+        currentRow.querySelector('.cell-firstname').innerText = formFirstName.value;
+        currentRow.querySelector('.cell-lastname').innerText  = formLastName.value;
+        currentRow.querySelector('.cell-email').innerText     = formEmail.value;
+        currentRow.querySelector('.cell-location').innerText  = formCity.value;
+        currentRow.querySelector('.cell-mobile').innerText    = `${formCountryCode.value} ${formPhone.value}`;
+      }
+      hideModal();
+    });
+
+    const hideModal = () => {
+      agentModal.classList.remove('show');
+      setTimeout(() => agentModal.style.display = 'none', 300);
+    };
+    closeModalBtn.addEventListener('click', hideModal);
+    cancelModalBtn.addEventListener('click', hideModal);
+  </script>
+</body>
+</html>

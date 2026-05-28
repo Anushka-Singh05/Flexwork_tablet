@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Job Posting – fle•work</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --p:#7B7DFC;--pm:#5355d4;--pl:#EEEEFF;
+  --y:#FFCD00;--yd:#c9a000;
+  --w:#FFFFFF;--bg:#ECEEF8;
+  --txt:#1A1A2E;--muted:#6B6B8A;--hint:#A0A0BC;--bdr:#D8D8EE;
+  --r:9px;--rl:14px;
+  --card-shadow:0 2px 0 #C4C4DC,0 4px 12px rgba(0,0,0,0.10);
+  --card-shadow-hover:0 1px 0 #C4C4DC,0 2px 8px rgba(0,0,0,0.10);
+  --inp-shadow:inset 0 2px 4px rgba(0,0,0,0.07);
+  --inp-shadow-focus:inset 0 2px 4px rgba(0,0,0,0.05),0 0 0 3px rgba(123,125,252,0.18);
+}
+
+html,body{height:100%;background:var(--bg);font-family:system-ui,sans-serif;font-size:14px}
+
+/* ── FRAME (fluid) ── */
+.frame{
+  width:100%;max-width:900px;min-width:280px;
+  height:100vh;max-height:960px;
+  display:flex;overflow:hidden;
+  border-radius:14px;border:1px solid var(--bdr);
+  background:var(--bg);position:relative;
+  margin:0 auto;
+}
+@media(max-width:600px){
+  .frame{border-radius:0;border:none;max-height:100vh;height:100dvh}
+}
+
+/* Overlay */
+.overlay{display:none;position:absolute;inset:0;background:rgba(0,0,0,0.38);z-index:99}
+.overlay.show{display:block}
+
+/* ── SIDEBAR ── */
+.sidebar{
+  width:62px;background:#fff;border-right:1px solid var(--bdr);
+  flex-shrink:0;display:flex;flex-direction:column;
+  height:100%;overflow:hidden;
+  transition:width .25s ease;z-index:100;position:relative
+}
+.sidebar.open{width:218px}
+@media(max-width:480px){
+  .sidebar{position:absolute;left:0;top:0;bottom:0;height:100%;z-index:100}
+  .sidebar.open{width:200px}
+}
+
+.sb-logo{
+  padding:16px 0;border-bottom:1px solid var(--bdr);
+  display:flex;align-items:center;justify-content:center;overflow:hidden;min-height:58px;gap:0
+}
+.sidebar.open .sb-logo{padding:16px 16px;justify-content:space-between}
+.logo-wrap{display:none}
+.sidebar.open .logo-wrap{display:block}
+.logo-txt{font-size:19px;font-weight:800;letter-spacing:-1px;line-height:1}
+.lf{color:#7B7DFC}.ld{color:#FFCD00}
+.logo-tag{font-size:9px;color:var(--muted);letter-spacing:0.4px;margin-top:3px;text-transform:uppercase}
+.sb-menu-btn{font-size:21px;color:var(--muted);cursor:pointer;flex-shrink:0}
+.sidebar:not(.open) .sb-menu-btn{margin:0 auto}
+
+.sb-nav{flex:1;padding:10px 0;overflow-y:auto;overflow-x:hidden}
+.sb-lbl{padding:10px 0 3px;font-size:9px;text-transform:uppercase;letter-spacing:1px;color:var(--hint);font-weight:600;text-align:center;overflow:hidden}
+.sidebar.open .sb-lbl{padding:10px 18px 3px;text-align:left}
+
+.sbi{display:flex;align-items:center;justify-content:center;gap:0;padding:12px 0;color:var(--txt);cursor:pointer;font-size:14px;font-weight:500;border-left:3px solid transparent;overflow:hidden;white-space:nowrap}
+.sidebar.open .sbi{gap:12px;padding:12px 18px;justify-content:flex-start}
+.sbi:hover{background:#f5f5ff;color:var(--p)}
+.sbi .ti{font-size:19px;color:var(--txt);flex-shrink:0}
+.sbi-lbl{display:none}.sidebar.open .sbi-lbl{display:inline}
+.sbi-chev{margin-left:auto;font-size:14px;display:none}.sidebar.open .sbi-chev{display:inline}
+
+.grp{background:#FFCD00;overflow:hidden}
+.sbi-inner{display:flex;align-items:center;justify-content:center;gap:0;padding:12px 0;color:#1A1A2E;font-weight:700;font-size:14px;cursor:pointer;white-space:nowrap}
+.sidebar.open .sbi-inner{gap:12px;padding:12px 18px;justify-content:flex-start}
+.sbi-inner .ti{font-size:19px;color:#1A1A2E;flex-shrink:0}
+.si-lbl{display:none}.sidebar.open .si-lbl{display:inline}
+.si-chev{margin-left:auto;font-size:14px;color:#1A1A2E;display:none}.sidebar.open .si-chev{display:inline}
+
+.sub-wrap{background:#fff;padding:4px 0;overflow:hidden;max-height:200px;transition:max-height .3s ease}
+.sub-wrap.collapsed{max-height:0;padding:0}
+.sbi-sub{display:flex;align-items:center;justify-content:center;gap:0;padding:10px 0;color:var(--muted);cursor:pointer;font-size:13px;white-space:nowrap}
+.sidebar.open .sbi-sub{gap:14px;padding:10px 18px 10px 22px;justify-content:flex-start}
+.sbi-sub:hover{color:var(--p)}
+.sbi-sub.on{color:var(--p);font-weight:600}
+.sbi-sub .dot{width:8px;height:8px;border-radius:50%;border:2px solid #ccc;flex-shrink:0}
+.sbi-sub.on .dot{border-color:var(--p);background:var(--p)}
+.ss-lbl{display:none}.sidebar.open .ss-lbl{display:inline}
+
+.sidebar:not(.open) .sbi-sub .dot{display:none}
+.sidebar:not(.open) .sub-wrap{max-height:0 !important;padding:0 !important}
+
+/* ── MAIN ── */
+.main{flex:1;display:flex;flex-direction:column;min-width:0;overflow:hidden}
+
+.topbar{background:#fff;border-bottom:2px solid var(--bdr);height:54px;padding:0 16px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;box-shadow:0 2px 0 rgba(0,0,0,0.06)}
+.tb-l{display:flex;align-items:center;gap:10px}
+.tb-ham{font-size:21px;color:var(--muted);cursor:pointer;display:none}
+.tb-title{font-size:15px;font-weight:700;color:var(--txt)}
+.tb-badge{background:var(--y);color:#4a3400;border-radius:20px;padding:2px 10px;font-size:11px;font-weight:700;box-shadow:0 2px 0 var(--yd)}
+.tb-r{display:flex;align-items:center;gap:10px}
+.tb-ic{font-size:18px;color:var(--muted);cursor:pointer}
+.av-wrap{display:flex;align-items:center;gap:7px;background:var(--pl);border-radius:24px;padding:4px 10px 4px 4px;border:1px solid rgba(123,125,252,0.25);box-shadow:0 2px 0 rgba(123,125,252,0.15);cursor:pointer}
+.av{width:26px;height:26px;border-radius:50%;background:var(--p);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;box-shadow:0 2px 0 var(--pm)}
+.av-name{font-size:11px;font-weight:600;color:var(--pm)}
+.av-id{font-size:10px;color:var(--hint)}
+@media(max-width:480px){
+  .tb-ham{display:block}
+  .av-name,.av-id{display:none}
+  .av-wrap{padding:4px;border-radius:50%}
+  .tb-ic:not(:last-of-type){display:none}
+}
+
+.tab-row{background:var(--w);display:flex;flex-shrink:0;border-bottom:1px solid var(--bdr);padding:0 16px;gap:0;overflow-x:auto}
+.tab-row::-webkit-scrollbar{display:none}
+.tab{padding:11px 14px;font-size:13px;font-weight:500;color:var(--muted);cursor:pointer;border-bottom:3px solid transparent;white-space:nowrap;flex-shrink:0;border-radius:8px 8px 0 0}
+.tab.on{color:var(--p);border-bottom-color:var(--p);font-weight:700;background:#FAFAFF}
+.tab:not(.on):hover{color:var(--txt);background:#f5f5ff}
+@media(max-width:400px){
+  .tab{padding:10px 10px;font-size:12px}
+}
+
+.scroll{flex:1;overflow-y:auto;padding:14px 14px 14px;display:flex;flex-direction:column;gap:12px}
+
+/* ── CARDS ── */
+.card{background:var(--w);border:1px solid var(--bdr);border-radius:var(--rl);padding:16px;box-shadow:var(--card-shadow);transition:box-shadow .2s}
+.card:hover{box-shadow:var(--card-shadow-hover)}
+.card-hd{display:flex;align-items:center;gap:12px;padding-bottom:13px;border-bottom:1.5px solid var(--bdr);margin-bottom:15px}
+.card-ic{width:36px;height:36px;border-radius:10px;background:var(--pl);display:flex;align-items:center;justify-content:center;border:1px solid rgba(123,125,252,0.2);box-shadow:0 3px 0 rgba(123,125,252,0.2),0 2px 6px rgba(123,125,252,0.08);flex-shrink:0}
+.card-ic .ti{font-size:18px;color:var(--p)}
+.card-title{font-size:14px;font-weight:700;color:var(--txt)}
+.card-sub{font-size:11px;color:var(--hint);margin-top:2px}
+
+/* ── GRIDS (fluid, responsive) ── */
+.g2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.g3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.g4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+@media(max-width:640px){
+  .g3,.g4{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:420px){
+  .g2,.g3,.g4{grid-template-columns:1fr}
+}
+.mb{margin-bottom:12px}
+
+/* ── INPUTS ── */
+.lbl{font-size:12px;font-weight:600;color:var(--txt);margin-bottom:5px;display:flex;align-items:center;gap:4px}
+.req{color:var(--p)}
+.info-ic{font-size:12px;color:var(--hint)}
+.inp,.sel{width:100%;height:40px;padding:0 11px;border:1.5px solid var(--bdr);border-radius:var(--r);font-size:13px;color:var(--txt);background:#FAFAFE;font-family:inherit;transition:border-color .15s,box-shadow .15s;box-shadow:var(--inp-shadow)}
+.sel{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='7'%3E%3Cpath d='M1 1l4.5 4.5L10 1' stroke='%23A0A0BC' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:28px;cursor:pointer}
+.inp:focus,.sel:focus{outline:none;border-color:var(--p);box-shadow:var(--inp-shadow-focus);background:#fff}
+.inp::placeholder{color:var(--hint);font-size:12px}
+.ic-inp{position:relative}
+.ic-inp .inp{padding-right:34px}
+.ic-inp .ti{position:absolute;right:10px;top:50%;transform:translateY(-50%);font-size:15px;color:var(--hint);pointer-events:none}
+
+/* ── DATE INPUT WRAPPER (calendar trigger) ── */
+.date-wrap{position:relative}
+.date-wrap .inp{padding-right:38px;cursor:pointer}
+.date-wrap .cal-btn{
+  position:absolute;right:0;top:0;bottom:0;width:38px;
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;color:var(--p);font-size:16px;
+  background:linear-gradient(135deg,var(--pl),#dddeff);
+  border-left:1.5px solid var(--bdr);
+  border-radius:0 var(--r) var(--r) 0;
+  transition:background .15s;
+}
+.date-wrap .cal-btn:hover{background:var(--p);color:#fff}
+.date-wrap .inp:focus{border-color:var(--p)}
+
+/* ── CALENDAR DROPDOWN ── */
+.cal-drop{
+  display:none;position:absolute;top:calc(100% + 6px);left:0;z-index:200;
+  background:#fff;border:1.5px solid var(--bdr);border-radius:12px;
+  box-shadow:0 8px 32px rgba(0,0,0,0.14),0 2px 0 #C4C4DC;
+  width:260px;padding:14px;
+  animation:calIn .18s ease;
+}
+.cal-drop.open{display:block}
+@keyframes calIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+
+/* keep calendar inside frame on small screens */
+@media(max-width:480px){
+  .cal-drop{left:50%;transform:translateX(-50%);width:240px}
+  .cal-drop.open{transform:translateX(-50%)}
+}
+
+.cal-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.cal-nav-btn{width:28px;height:28px;border:1.5px solid var(--bdr);border-radius:7px;background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;color:var(--muted);transition:all .15s}
+.cal-nav-btn:hover{background:var(--pl);color:var(--p);border-color:var(--p)}
+.cal-month-lbl{font-size:13px;font-weight:700;color:var(--txt)}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
+.cal-dh{text-align:center;font-size:10px;font-weight:700;color:var(--hint);padding:3px 0;text-transform:uppercase}
+.cal-d{
+  text-align:center;font-size:12px;padding:5px 2px;border-radius:6px;
+  cursor:pointer;color:var(--txt);transition:all .12s;
+}
+.cal-d:hover:not(.blank):not(.today):not(.selected){background:var(--pl);color:var(--p)}
+.cal-d.blank{cursor:default}
+.cal-d.today{background:var(--pl);color:var(--p);font-weight:700}
+.cal-d.selected{background:var(--p);color:#fff;font-weight:700;box-shadow:0 2px 6px rgba(123,125,252,0.4)}
+.cal-d.other-month{color:var(--hint)}
+
+/* ── RICH TEXT EDITOR ── */
+.rte{border:1.5px solid var(--bdr);border-radius:var(--r);overflow:hidden;box-shadow:var(--inp-shadow)}
+.rte:focus-within{border-color:var(--p);box-shadow:var(--inp-shadow-focus)}
+.rtb{background:#F2F2FA;border-bottom:1px solid var(--bdr);padding:5px 8px;display:flex;align-items:center;gap:1px;flex-wrap:wrap}
+.rb{width:26px;height:26px;border:none;background:none;border-radius:5px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:12px;font-weight:700;transition:all .15s}
+.rb:hover{background:var(--w);color:var(--p);box-shadow:0 2px 0 rgba(123,125,252,0.25),0 1px 4px rgba(0,0,0,0.08)}
+.rsep{width:1px;height:15px;background:var(--bdr);margin:0 3px}
+.rsel{height:22px;border:1px solid var(--bdr);border-radius:5px;font-size:10px;padding:0 4px;background:var(--w);color:var(--muted);cursor:pointer;box-shadow:0 1px 0 var(--bdr)}
+.rte-body{padding:10px 12px;min-height:70px;font-size:13px;color:var(--hint);line-height:1.6;background:#FAFAFE;outline:none}
+.rte-body[contenteditable]:empty:before{content:attr(data-placeholder);color:var(--hint);pointer-events:none}
+.rte-body[contenteditable]:not(:empty){color:var(--txt)}
+
+/* ── FOOTER ── */
+.footer{
+  background:#fff;border-top:2px solid var(--bdr);
+  padding:12px 16px;
+  display:flex;justify-content:flex-end;align-items:center;
+  gap:12px;flex-shrink:0;
+  box-shadow:0 -2px 0 rgba(0,0,0,0.04);
+  flex-wrap:wrap;
+}
+@media(max-width:420px){
+  .footer{justify-content:stretch;gap:8px;padding:10px 12px}
+  .footer .btn{flex:1;justify-content:center}
+}
+
+.btn{
+  height:42px;padding:0 20px;border-radius:var(--r);
+  font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;
+  display:inline-flex;align-items:center;gap:8px;
+  transition:all .12s;position:relative;top:0;
+  white-space:nowrap;
+}
+.btn:active{top:2px}
+.btn-preview{background:var(--w);color:var(--p);border:1.5px solid var(--p);box-shadow:0 4px 0 rgba(123,125,252,0.4),0 2px 8px rgba(123,125,252,0.15)}
+.btn-preview:hover{background:var(--pl);box-shadow:0 3px 0 rgba(123,125,252,0.35)}
+.btn-preview:active{box-shadow:0 1px 0 rgba(123,125,252,0.3)}
+.btn-post{background:var(--y);color:#3a2900;border:1.5px solid var(--yd);box-shadow:0 4px 0 #aa8600,0 2px 10px rgba(255,205,0,0.35)}
+.btn-post:hover{background:#FFD520;box-shadow:0 3px 0 #aa8600}
+.btn-post:active{box-shadow:0 1px 0 #aa8600}
+
+/* Compact btn text on very small screens */
+@media(max-width:340px){
+  .btn{font-size:12px;padding:0 12px;height:38px}
+}
+</style>
+</head>
+<body>
+<div class="frame">
+  <div class="overlay" id="ov" onclick="tog()"></div>
+
+  <!-- SIDEBAR -->
+  <div class="sidebar" id="sb">
+    <div class="sb-logo">
+      <div class="logo-wrap">
+        <img src="logo.png" alt="Flexwork" class="h-16 w-auto object-contain">
+      </div>
+      <i class="ti ti-menu-2 sb-menu-btn" onclick="tog()" aria-hidden="true"></i>
+    </div>
+    <div class="sb-nav">
+      <div class="sbi"><i class="ti ti-layout-dashboard"></i><span class="sbi-lbl">Dashboard</span></div>
+      <div class="sbi">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" style="width:19px;height:19px;flex-shrink:0"><path d="M12.5 16a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7m.5-5v1h1a.5.5 0 0 1 0 1h-1v1a.5.5 0 0 1-1 0v-1h-1a.5.5 0 0 1 0-1h1v-1a.5.5 0 0 1 1 0m-2-6a3 3 0 1 1-6 0 3 3 0 0 1 6 0"/><path d="M2 13c0 1 1 1 1 1h5.256A4.5 4.5 0 0 1 8 12.5a4.5 4.5 0 0 1 1.544-3.393Q8.844 9.002 8 9c-5 0-6 3-6 4"/></svg>
+        <span class="sbi-lbl">Agent</span>
+      </div>
+      <div class="grp">
+        <div class="sbi-inner" id="svcInner">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" style="width:19px;height:19px;flex-shrink:0"><path d="M8.186 1.113a.5.5 0 0 0-.372 0L1.846 3.5l2.404.961L10.404 2zm3.564 1.426L5.596 5 8 5.961 14.154 3.5zm3.25 1.7-6.5 2.6v7.922l6.5-2.6V4.24zM7.5 14.762V6.838L1 4.239v7.923zM7.443.184a1.5 1.5 0 0 1 1.114 0l7.129 2.852A.5.5 0 0 1 16 3.5v8.662a1 1 0 0 1-.629.928l-7.185 2.874a.5.5 0 0 1-.372 0L.63 13.09a1 1 0 0 1-.63-.928V3.5a.5.5 0 0 1 .314-.464z"/></svg>
+          <span class="si-lbl">Our Services</span>
+          <i class="ti ti-chevron-up si-chev" id="svcChev" aria-hidden="true"></i>
+        </div>
+      </div>
+      <div class="sub-wrap" id="subWrap">
+        <div class="sbi-sub on"><div class="dot"></div><span class="ss-lbl">Interview Panel</span></div>
+        <div class="sbi-sub"><div class="dot"></div><span class="ss-lbl">Consultant</span></div>
+        <div class="sbi-sub"><div class="dot"></div><span class="ss-lbl">Trainer</span></div>
+      </div>
+      <div class="sbi">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" style="width:19px;height:19px;flex-shrink:0"><path d="M3 4.5a.5.5 0 0 1 .5-.5h6a.5.5 0 1 1 0 1h-6a.5.5 0 0 1-.5-.5m0 2a.5.5 0 0 1 .5-.5h6a.5.5 0 1 1 0 1h-6a.5.5 0 0 1-.5-.5m0 2a.5.5 0 0 1 .5-.5h6a.5.5 0 1 1 0 1h-6a.5.5 0 0 1-.5-.5m0 2a.5.5 0 0 1 .5-.5h6a.5.5 0 0 1 0 1h-6a.5.5 0 0 1-.5-.5m0 2a.5.5 0 0 1 .5-.5h6a.5.5 0 0 1 0 1h-6a.5.5 0 0 1-.5-.5M11.5 4a.5.5 0 0 0 0 1h1a.5.5 0 0 0 0-1zm0 2a.5.5 0 0 0 0 1h1a.5.5 0 0 0 0-1zm0 2a.5.5 0 0 0 0 1h1a.5.5 0 0 0 0-1zm0 2a.5.5 0 0 0 0 1h1a.5.5 0 0 0 0-1zm0 2a.5.5 0 0 0 0 1h1a.5.5 0 0 0 0-1z"/><path d="M2.354.646a.5.5 0 0 0-.801.13l-.5 1A.5.5 0 0 0 1 2v13H.5a.5.5 0 0 0 0 1h15a.5.5 0 0 0 0-1H15V2a.5.5 0 0 0-.053-.224l-.5-1a.5.5 0 0 0-.8-.13L13 1.293l-.646-.647a.5.5 0 0 0-.708 0L11 1.293l-.646-.647a.5.5 0 0 0-.708 0L9 1.293 8.354.646a.5.5 0 0 0-.708 0L7 1.293 6.354.646a.5.5 0 0 0-.708 0L5 1.293 4.354.646a.5.5 0 0 0-.708 0L3 1.293zm-.217 1.198.51.51a.5.5 0 0 0 .707 0L4 1.707l.646.647a.5.5 0 0 0 .708 0L6 1.707l.646.647a.5.5 0 0 0 .708 0L8 1.707l.646.647a.5.5 0 0 0 .708 0L10 1.707l.646.647a.5.5 0 0 0 .708 0L12 1.707l.646.647a.5.5 0 0 0 .708 0l.509-.51.137.274V15H2V2.118z"/></svg>
+        <span class="sbi-lbl">Invoices</span>
+      </div>
+      <div class="sbi"><i class="ti ti-credit-card"></i><span class="sbi-lbl">Payments</span></div>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main">
+    <div class="topbar">
+      <div class="tb-l">
+        <i class="ti ti-menu-2 tb-ham" onclick="tog()" aria-hidden="true"></i>
+        <span class="tb-title">Interview Panel</span>
+        <div class="tb-badge">Responsive</div>
+      </div>
+      <div class="tb-r">
+        <i class="ti ti-mail tb-ic" aria-hidden="true"></i>
+        <i class="ti ti-bell tb-ic" aria-hidden="true"></i>
+        <div class="av-wrap">
+          <div class="av">C</div>
+          <div><div class="av-name">Christeena</div><div class="av-id">FW-EMP022</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="tab-row">
+      <div class="tab on">Job Posting</div>
+      <div class="tab">Job Requirement</div>
+      <div class="tab">Ongoing Requirement</div>
+    </div>
+
+    <div class="scroll">
+
+      <!-- About Requirements -->
+      <div class="card">
+        <div class="card-hd">
+          <div class="card-ic"><i class="ti ti-file-description" aria-hidden="true"></i></div>
+          <div><div class="card-title">About Requirements</div><div class="card-sub">Title, role, description and responsibilities</div></div>
+        </div>
+        <div class="g2 mb">
+          <div><div class="lbl">Title <span class="req">*</span></div><input class="inp" type="text" placeholder="Enter title"></div>
+          <div><div class="lbl">Role <span class="req">*</span> <i class="ti ti-info-circle info-ic"></i></div><input class="inp" type="text" placeholder="Enter role"></div>
+        </div>
+        <div class="mb">
+          <div class="lbl">Description <span class="req">*</span></div>
+          <div class="rte">
+            <div class="rtb">
+              <button class="rb"><b>B</b></button><button class="rb"><i>I</i></button><button class="rb"><u style="font-size:10px">U</u></button><button class="rb"><s style="font-size:10px">S</s></button><button class="rb"><i class="ti ti-code" style="font-size:12px"></i></button>
+              <div class="rsep"></div>
+              <button class="rb"><i class="ti ti-list" style="font-size:12px"></i></button><button class="rb"><i class="ti ti-list-numbers" style="font-size:12px"></i></button>
+              <div class="rsep"></div>
+              <select class="rsel"><option>Heading</option><option>H1</option><option>H2</option></select>
+              <div class="rsep"></div>
+              <button class="rb"><i class="ti ti-link" style="font-size:12px"></i></button><button class="rb"><i class="ti ti-align-left" style="font-size:12px"></i></button><button class="rb"><i class="ti ti-align-center" style="font-size:12px"></i></button><button class="rb"><i class="ti ti-align-right" style="font-size:12px"></i></button>
+            </div>
+            <div class="rte-body" contenteditable="true" data-placeholder="Provide a brief description of the Requirements"></div>
+          </div>
+        </div>
+        <div>
+          <div class="lbl">Responsibilities <span class="req">*</span></div>
+          <div class="rte">
+            <div class="rtb">
+              <button class="rb"><b>B</b></button><button class="rb"><i>I</i></button><button class="rb"><u style="font-size:10px">U</u></button>
+              <div class="rsep"></div>
+              <button class="rb"><i class="ti ti-list" style="font-size:12px"></i></button><button class="rb"><i class="ti ti-list-numbers" style="font-size:12px"></i></button>
+              <div class="rsep"></div>
+              <select class="rsel"><option>Heading</option><option>H1</option></select>
+              <div class="rsep"></div>
+              <button class="rb"><i class="ti ti-align-left" style="font-size:12px"></i></button><button class="rb"><i class="ti ti-align-center" style="font-size:12px"></i></button>
+            </div>
+            <div class="rte-body" contenteditable="true" data-placeholder="Provide responsibilities involved in the Requirements"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Job Preferences — with ti-settings icon -->
+      <div class="card">
+        <div class="card-hd">
+          <div class="card-ic"><i class="ti ti-settings-2" aria-hidden="true"></i></div>
+          <div><div class="card-title">Job Preferences</div><div class="card-sub">Mode, priority, dates and positions</div></div>
+        </div>
+        <div class="g3 mb">
+          <div><div class="lbl">Mode <span class="req">*</span></div><select class="sel"><option value="">Select mode</option><option>Remote</option><option>On-site</option><option>Hybrid</option></select></div>
+          <div><div class="lbl">Priority <span class="req">*</span></div><select class="sel"><option value="">Select priority</option><option>High</option><option>Medium</option><option>Low</option></select></div>
+          <div><div class="lbl">Status <span class="req">*</span></div><select class="sel"><option value="">Select status</option><option>Active</option><option>Draft</option><option>Closed</option></select></div>
+        </div>
+        <div class="g3 mb">
+          <!-- Start Date with calendar -->
+          <div>
+            <div class="lbl">Start Date <span class="req">*</span></div>
+            <div class="date-wrap" id="sdWrap">
+              <input class="inp" id="sdInput" placeholder="MM/DD/YYYY" readonly onclick="toggleCal('sdCal','sdInput')">
+              <div class="cal-btn" onclick="toggleCal('sdCal','sdInput')"><i class="ti ti-calendar-event"></i></div>
+              <div class="cal-drop" id="sdCal"></div>
+            </div>
+          </div>
+          <!-- End Date with calendar -->
+          <div>
+            <div class="lbl">End Date <span class="req">*</span></div>
+            <div class="date-wrap" id="edWrap">
+              <input class="inp" id="edInput" placeholder="MM/DD/YYYY" readonly onclick="toggleCal('edCal','edInput')">
+              <div class="cal-btn" onclick="toggleCal('edCal','edInput')"><i class="ti ti-calendar-event"></i></div>
+              <div class="cal-drop" id="edCal"></div>
+            </div>
+          </div>
+          <div><div class="lbl">Req. Duration <span class="req">*</span></div><input class="inp" placeholder="Enter duration"></div>
+        </div>
+        <div class="g2">
+          <div><div class="lbl">Duration Units <span class="req">*</span></div><select class="sel"><option value="">Select unit</option><option>Days</option><option>Weeks</option><option>Months</option></select></div>
+          <div><div class="lbl">No. of Positions <span class="req">*</span></div><input class="inp" type="number" placeholder="Enter number"></div>
+        </div>
+      </div>
+
+      <!-- Candidate Skills -->
+      <div class="card">
+        <div class="card-hd">
+          <div class="card-ic"><i class="ti ti-award" aria-hidden="true"></i></div>
+          <div><div class="card-title">Candidate Skills and Experience</div><div class="card-sub">Skills and experience</div></div>
+        </div>
+        <div class="mb"><div class="lbl">Primary Skills <span class="req">*</span></div><div class="ic-inp"><input class="inp" placeholder="Search Primary Skills"><i class="ti ti-search"></i></div></div>
+        <div class="mb"><div class="lbl">Secondary Skills <span class="req">*</span></div><div class="ic-inp"><input class="inp" placeholder="Search Secondary Skills"><i class="ti ti-search"></i></div></div>
+        <div class="g2">
+          <div><div class="lbl">Total Experience <span class="req">*</span></div><input class="inp" placeholder="e.g. 5 years"></div>
+          <div><div class="lbl">Relevant Experience <span class="req">*</span></div><input class="inp" placeholder="e.g. 3 years"></div>
+        </div>
+      </div>
+
+      <!-- Candidate Pricing -->
+      <div class="card">
+        <div class="card-hd">
+          <div class="card-ic"><i class="ti ti-coin" aria-hidden="true"></i></div>
+          <div><div class="card-title">Candidate Pricing</div><div class="card-sub">Availability, hours, rate and currency</div></div>
+        </div>
+        <div class="g4">
+          <div><div class="lbl">Availability <span class="req">*</span> <i class="ti ti-info-circle info-ic"></i></div><input class="inp" placeholder="Enter availability"></div>
+          <div><div class="lbl">Availability hrs <span class="req">*</span></div><input class="inp" type="number" placeholder="Enter hours"></div>
+          <div><div class="lbl">Hourly Rate <span class="req">*</span></div><input class="inp" type="number" placeholder="Enter rate"></div>
+          <div><div class="lbl">Currency <span class="req">*</span></div><select class="sel"><option value="">Select currency</option><option>USD</option><option>EUR</option><option>INR</option></select></div>
+        </div>
+      </div>
+
+      <!-- About Client -->
+      <div class="card">
+        <div class="card-hd">
+          <div class="card-ic"><i class="ti ti-building" aria-hidden="true"></i></div>
+          <div><div class="card-title">About Client</div><div class="card-sub">Location and client description</div></div>
+        </div>
+        <div class="mb"><div class="lbl">Location <span class="req">*</span> <i class="ti ti-info-circle info-ic"></i></div><div class="ic-inp"><input class="inp" placeholder="e.g. San Francisco, CA"><i class="ti ti-map-pin"></i></div></div>
+        <div>
+          <div class="lbl">About Client <span class="req">*</span></div>
+          <div class="rte">
+            <div class="rtb">
+              <button class="rb"><b>B</b></button><button class="rb"><i>I</i></button><button class="rb"><u style="font-size:10px">U</u></button>
+              <div class="rsep"></div>
+              <button class="rb"><i class="ti ti-list" style="font-size:12px"></i></button>
+              <div class="rsep"></div>
+              <select class="rsel"><option>Heading</option><option>H1</option><option>Body</option></select>
+              <div class="rsep"></div>
+              <button class="rb"><i class="ti ti-align-left" style="font-size:12px"></i></button><button class="rb"><i class="ti ti-align-center" style="font-size:12px"></i></button>
+            </div>
+            <div class="rte-body" contenteditable="true" data-placeholder="Client description"></div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /scroll -->
+
+    <!-- FOOTER BUTTONS -->
+    <div class="footer">
+      <button class="btn btn-preview"><i class="ti ti-eye" style="font-size:16px" aria-hidden="true"></i>Job Preview</button>
+      <button class="btn btn-post"><i class="ti ti-send" style="font-size:16px" aria-hidden="true"></i>Post a Job</button>
+    </div>
+
+  </div><!-- /main -->
+</div><!-- /frame -->
+
+<script>
+// ── Sidebar toggle ──
+function tog(){
+  const sb=document.getElementById('sb');
+  sb.classList.toggle('open');
+  document.getElementById('ov').classList.toggle('show');
+  if(!sb.classList.contains('open')){
+    document.getElementById('subWrap').classList.add('collapsed');
+    document.getElementById('svcChev').style.transform='rotate(180deg)';
+  }
+}
+
+document.addEventListener('DOMContentLoaded',function(){
+  // Services sub-menu
+  const svcInner=document.getElementById('svcInner');
+  const subWrap=document.getElementById('subWrap');
+  const svcChev=document.getElementById('svcChev');
+  svcInner.addEventListener('click',function(){
+    const sb=document.getElementById('sb');
+    if(!sb.classList.contains('open')){
+      sb.classList.add('open');
+      document.getElementById('ov').classList.add('show');
+      return;
+    }
+    const isCollapsed=subWrap.classList.toggle('collapsed');
+    svcChev.style.transform=isCollapsed?'rotate(180deg)':'rotate(0deg)';
+  });
+
+  // Init calendars
+  initCal('sdCal','sdInput');
+  initCal('edCal','edInput');
+});
+
+// ── Calendar logic ──
+const MONTHS=['January','February','March','April','May','June','July','August','September','October','November','December'];
+const DAYS=['Su','Mo','Tu','We','Th','Fr','Sa'];
+
+let calState={};
+
+function initCal(calId,inputId){
+  const now=new Date();
+  calState[calId]={year:now.getFullYear(),month:now.getMonth(),inputId};
+  renderCal(calId);
+}
+
+function renderCal(calId){
+  const s=calState[calId];
+  const cal=document.getElementById(calId);
+  const inp=document.getElementById(s.inputId);
+  const selectedVal=inp.value;
+  let selectedDate=null;
+  if(selectedVal){
+    const parts=selectedVal.split('/');
+    if(parts.length===3) selectedDate=new Date(parts[2],parts[0]-1,parts[1]);
+  }
+  const today=new Date();
+  const firstDay=new Date(s.year,s.month,1).getDay();
+  const daysInMonth=new Date(s.year,s.month+1,0).getDate();
+
+  let html=`
+  <div class="cal-nav">
+    <button class="cal-nav-btn" onclick="prevMonth('${calId}')"><i class="ti ti-chevron-left"></i></button>
+    <span class="cal-month-lbl">${MONTHS[s.month]} ${s.year}</span>
+    <button class="cal-nav-btn" onclick="nextMonth('${calId}')"><i class="ti ti-chevron-right"></i></button>
+  </div>
+  <div class="cal-grid">
+    ${DAYS.map(d=>`<div class="cal-dh">${d}</div>`).join('')}`;
+
+  // blank cells before first day
+  for(let i=0;i<firstDay;i++) html+=`<div class="cal-d blank"></div>`;
+
+  for(let d=1;d<=daysInMonth;d++){
+    const isToday=today.getDate()===d&&today.getMonth()===s.month&&today.getFullYear()===s.year;
+    const isSel=selectedDate&&selectedDate.getDate()===d&&selectedDate.getMonth()===s.month&&selectedDate.getFullYear()===s.year;
+    const cls=[isToday&&!isSel?'today':'',isSel?'selected':''].filter(Boolean).join(' ');
+    html+=`<div class="cal-d ${cls}" onclick="pickDate('${calId}',${d})">${d}</div>`;
+  }
+  html+=`</div>`;
+  cal.innerHTML=html;
+}
+
+function prevMonth(calId){
+  const s=calState[calId];
+  s.month--;if(s.month<0){s.month=11;s.year--;}
+  renderCal(calId);
+}
+function nextMonth(calId){
+  const s=calState[calId];
+  s.month++;if(s.month>11){s.month=0;s.year++;}
+  renderCal(calId);
+}
+function pickDate(calId,day){
+  const s=calState[calId];
+  const inp=document.getElementById(s.inputId);
+  const mm=String(s.month+1).padStart(2,'0');
+  const dd=String(day).padStart(2,'0');
+  inp.value=`${mm}/${dd}/${s.year}`;
+  renderCal(calId);
+  document.getElementById(calId).classList.remove('open');
+}
+
+let openCal=null;
+function toggleCal(calId,inputId){
+  const cal=document.getElementById(calId);
+  if(openCal&&openCal!==calId){
+    document.getElementById(openCal).classList.remove('open');
+  }
+  cal.classList.toggle('open');
+  openCal=cal.classList.contains('open')?calId:null;
+}
+
+// Close calendar on outside click
+document.addEventListener('click',function(e){
+  if(!openCal) return;
+  const cal=document.getElementById(openCal);
+  const s=calState[openCal];
+  const wrap=document.getElementById(s.inputId).closest('.date-wrap');
+  if(!wrap.contains(e.target)){
+    cal.classList.remove('open');
+    openCal=null;
+  }
+});
+</script>
+</body>
+</html>

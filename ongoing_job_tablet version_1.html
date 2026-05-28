@@ -1,0 +1,1263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Interview Panel</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Poppins',sans-serif;}
+body{background:#f7f7f8;display:flex;height:100vh;overflow:hidden;color:#121212;}
+
+/* SIDEBAR */
+.sidebar{width:260px;background:#fff;border-right:1px solid #e6e6e6;padding:22px 14px;display:flex;flex-direction:column;transition:width 0.3s ease;overflow:hidden;flex-shrink:0;}
+.sidebar.collapsed{width:80px;}
+.sidebar-header{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-shrink:0;}
+.logo-wrap{display:flex;flex-direction:column;overflow:hidden;transition:opacity 0.2s ease,width 0.3s ease;white-space:nowrap;}
+.sidebar.collapsed .logo-wrap{opacity:0;width:0;pointer-events:none;}
+.logo{font-size:42px;font-weight:700;line-height:1;color:#5648ff;}
+.logo span{color:#ffcd00;}
+.tag{font-size:12px;font-weight:600;color:#4e50ff;margin-top:4px;}
+.hamburger-btn{background:none;border:none;cursor:pointer;padding:6px;border-radius:8px;color:#7f7f7f;font-size:22px;line-height:1;flex-shrink:0;transition:background 0.2s ease,color 0.2s ease;display:flex;align-items:center;justify-content:center;}
+.hamburger-btn:hover{background:#f1f1f1;color:#121212;}
+.menu{margin-top:55px;}
+.menu-item{display:flex;align-items:center;gap:14px;padding:14px 18px;font-size:18px;border-radius:10px;margin-bottom:8px;cursor:pointer;color:#64748b;font-weight:500;transition:all 0.2s ease;white-space:nowrap;overflow:hidden;}
+.menu-item:hover{background:#f8fafc;color:#1e293b;}
+.menu-item.active{background:#ffcd00;color:#121212;font-weight:700;}
+.menu-item svg{width:22px;height:22px;flex-shrink:0;}
+.menu-item .label{transition:opacity 0.2s ease;opacity:1;}
+.sidebar.collapsed .menu-item .label{opacity:0;width:0;overflow:hidden;}
+.sidebar.collapsed .menu-item{justify-content:center;padding:14px;gap:0;}
+.submenu{margin-left:30px;padding-left:25px;border-left:2px solid #e1e1e1;overflow:hidden;max-height:200px;transition:max-height 0.3s ease,opacity 0.25s ease,margin 0.3s ease;opacity:1;}
+.sidebar.collapsed .submenu{max-height:0;opacity:0;margin:0;pointer-events:none;}
+.submenu.closed{max-height:0;opacity:0;pointer-events:none;}
+.submenu div{padding:14px 0;font-size:17px;color:#64748b;cursor:pointer;white-space:nowrap;}
+.submenu div:hover{color:#1e293b;}
+.submenu .selected{color:#4b4bff;font-weight:600;}
+.dropdown-arrow{margin-left:auto;font-size:12px;transition:transform 0.3s ease,opacity 0.2s ease;flex-shrink:0;}
+.sidebar.collapsed .dropdown-arrow{opacity:0;width:0;}
+.dropdown-arrow.open{transform:rotate(180deg);}
+
+/* MAIN */
+.main{flex:1;display:flex;flex-direction:column;min-width:0;transition:flex 0.3s ease;}
+.header{height:100px;background:#fff;border-bottom:1px solid #ececec;display:flex;justify-content:flex-end;align-items:center;padding:0 28px;}
+.profile{display:flex;align-items:center;gap:18px;}
+.notify{font-size:24px;}
+.avatar{width:54px;height:54px;border-radius:50%;overflow:hidden;}
+.avatar img{width:100%;height:100%;object-fit:cover;}
+.user-info h3{font-size:16px;color:#5145ff;font-weight:600;}
+.user-info p{font-size:14px;}
+
+/* CONTENT */
+.content{padding:24px 28px;overflow:auto;}
+.title{font-size:28px;font-weight:700;margin-bottom:22px;}
+
+/* TITLE + TABS ROW */
+.title-tabs-row{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:24px;}
+.title{font-size:28px;font-weight:700;margin-bottom:0;white-space:nowrap;flex-shrink:0;}
+
+/* TABS */
+.tabs{display:flex;background:#fff;border:1px solid #e5e5e5;border-radius:12px;overflow:hidden;margin-bottom:0;flex-shrink:0;}
+.tab{flex:1;padding:14px 20px;text-align:center;font-size:15px;font-weight:500;background:white;border-right:1px solid #eee;white-space:nowrap;cursor:pointer;}
+.tab:last-child{border-right:none;}
+.tab.active{background:#ffcd00;}
+
+/* CARD */
+.job-card{background:white;padding:25px;border-radius:14px;box-shadow:0 1px 5px rgba(0,0,0,.08);margin-bottom:22px;}
+.job-title{font-size:20px;font-weight:700;}
+.location{margin-top:5px;font-size:15px;}
+.stats{display:flex;gap:20px;margin:20px 0;}
+.stat{flex:1;padding:14px 18px;border-radius:10px;display:flex;justify-content:space-between;font-weight:600;font-size:18px;}
+.purple{background:#f2efff;border:1px solid #d8ccff;}
+.green{background:#ebf9ed;border:1px solid #b6e3bf;}
+.red{background:#fff1f1;border:1px solid #f0b3b3;}
+.yellow{background:#fff8de;border:1px solid #f4d469;}
+.desc-title{font-size:16px;font-weight:700;margin-bottom:8px;}
+ul{padding-left:18px;line-height:1.8;margin-bottom:18px;}
+.tags{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:18px;}
+.tag-box{padding:8px 16px;border-radius:20px;border:1px solid #ddd;background:#fafafa;font-size:14px;}
+.criteria{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+
+/* TABLE */
+.panel{background:white;border-radius:12px;box-shadow:0 2px 6px rgba(0,0,0,.08);margin-bottom:20px;overflow:hidden;}
+.panel-title{padding:16px 20px;font-size:18px;font-weight:700;border-bottom:1px solid #eee;}
+.panel-title-row{display:flex;align-items:center;justify-content:space-between;padding:12px 20px;border-bottom:1px solid #eee;gap:12px;}
+.table-scroll-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;width:100%;scrollbar-width:thin;}
+.table-scroll-wrap::-webkit-scrollbar{height:5px;}
+.table-scroll-wrap::-webkit-scrollbar-track{background:#f1f1f1;}
+.table-scroll-wrap::-webkit-scrollbar-thumb{background:#ccc;border-radius:4px;}
+table{width:100%;border-collapse:collapse;min-width:700px;}
+th{padding:14px 20px;text-align:left;font-size:14px;background:#fafafa;white-space:nowrap;}
+td{padding:12px 20px;font-size:14px;border-top:1px solid #eee;white-space:nowrap;}
+.status{padding:4px 10px;border-radius:5px;font-size:13px;font-weight:600;display:inline-block;}
+.pending{background:#ffe89b;}
+.schedule{background:#8d73ff;color:white;}
+.scheduled{background:#aef2d2;}
+.hired{background:#19d17f;color:white;}
+.completed{background:#c9f0c9;}
+.completing{background:#ffe6a6;}
+.confirmed-status{background:#dcfce7;color:#15803d;}
+.action-btn{padding:7px 18px;border:1px solid #d5d5d5;background:white;border-radius:7px;cursor:pointer;font-size:13px;transition:background 0.15s,border-color 0.15s;}
+.action-btn:hover{background:#f8fafc;border-color:#b0b0b0;}
+
+/* 3-DOT MENU */
+.dot-btn{background:none;border:none;cursor:pointer;font-size:20px;color:#64748b;padding:4px 10px;border-radius:6px;line-height:1;transition:background 0.15s;}
+.dot-btn:hover{background:#f1f5f9;color:#1e293b;}
+.action-cell{position:relative;}
+.dot-menu{position:fixed;background:#fff;border:1px solid #e2e8f0;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.14);z-index:9999;min-width:170px;padding:6px 0;display:none;}
+.dot-menu.open{display:block;}
+.dot-menu-item{display:flex;align-items:center;gap:10px;padding:10px 16px;font-size:14px;cursor:pointer;color:#334155;transition:background 0.15s;}
+.dot-menu-item:hover{background:#f8fafc;}
+.dot-menu-item.danger{color:#ef4444;}
+.dot-menu-item svg{width:16px;height:16px;flex-shrink:0;}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:1000;display:none;align-items:flex-start;justify-content:flex-end;}
+.modal-overlay.open{display:flex;}
+.panel-modal{background:#fff;width:75%;max-width:1100px;height:100vh;overflow-y:auto;padding:32px 36px;position:relative;animation:slideIn 0.25s ease;}
+@keyframes slideIn{from{transform:translateX(60px);opacity:0;}to{transform:translateX(0);opacity:1;}}
+.modal-close{position:absolute;top:18px;right:22px;background:none;border:none;font-size:24px;cursor:pointer;color:#94a3b8;line-height:1;}
+.modal-close:hover{color:#334155;}
+.modal-title{font-size:20px;font-weight:700;margin-bottom:0;color:#121212;}
+.modal-title-row{display:flex;align-items:center;gap:14px;margin-bottom:18px;}
+.modal-mode-badge{padding:4px 14px;border-radius:20px;font-size:12px;font-weight:600;background:#e0e7ff;color:#4338ca;}
+.modal-mode-badge.view-mode{background:#dcfce7;color:#15803d;}
+.modal-meta{display:flex;align-items:center;gap:28px;font-size:14px;margin-bottom:24px;flex-wrap:wrap;}
+.modal-meta span{color:#64748b;}
+.modal-meta strong{color:#121212;}
+.slot-legend{margin-left:auto;display:flex;gap:16px;align-items:center;font-size:13px;}
+.legend-dot{width:12px;height:12px;border-radius:50%;display:inline-block;margin-right:4px;}
+.legend-dot.green{background:#22c55e;}
+.legend-dot.yellow{background:#f59e0b;}
+.legend-dot.red{background:#ef4444;}
+.modal-section-title{font-size:15px;font-weight:600;margin-bottom:16px;color:#334155;}
+.modal-body{display:flex;gap:28px;align-items:flex-start;}
+
+/* Calendar */
+.calendar-wrap{border:1px solid #e2e8f0;border-radius:12px;padding:18px;min-width:280px;background:#fafafa;}
+.cal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;font-weight:600;font-size:15px;}
+.cal-nav{background:none;border:none;cursor:pointer;font-size:18px;color:#64748b;padding:2px 6px;border-radius:6px;}
+.cal-nav:hover{background:#f1f5f9;}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;text-align:center;}
+.cal-day-name{font-size:12px;font-weight:600;color:#94a3b8;padding:4px 0;}
+.cal-day{font-size:13px;padding:7px 4px;border-radius:8px;cursor:pointer;color:#334155;transition:background 0.15s;}
+.cal-day:hover{background:#e0e7ff;}
+.cal-day.selected{background:#5648ff;color:#fff;font-weight:600;}
+.cal-day.today{border:2px solid #5648ff;}
+.cal-day.empty{cursor:default;}
+
+/* Slots */
+.slot-panel{flex:1;}
+.slot-date-title{font-size:18px;font-weight:700;margin-bottom:16px;color:#1e293b;}
+.slot-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;}
+.slot-chip{padding:10px 14px;border-radius:10px;border:1.5px solid #e2e8f0;font-size:13px;text-align:center;cursor:pointer;background:#fff;transition:all 0.15s;line-height:1.4;}
+.slot-chip:hover{border-color:#5648ff;background:#f0eeff;}
+.slot-chip.available{border-color:#bbf7d0;background:#f0fdf4;}
+.slot-chip.partial{border-color:#fde68a;background:#fffbeb;}
+.slot-chip.soldout{border-color:#fecaca;background:#fef2f2;color:#94a3b8;cursor:not-allowed;}
+.slot-chip.selected-slot{border-color:#5648ff;background:#5648ff;color:#fff;}
+.slot-label{font-size:11px;margin-top:2px;color:#94a3b8;}
+.slot-chip.selected-slot .slot-label{color:#c7d2fe;}
+
+/* Booked cards */
+.booked-card{display:flex;align-items:center;gap:18px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:16px 20px;margin-bottom:12px;}
+.booked-card-icon{width:42px;height:42px;border-radius:10px;background:#5648ff;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.booked-card-icon svg{color:#fff;width:20px;height:20px;}
+.booked-card-info{flex:1;}
+.booked-card-date{font-size:13px;color:#64748b;margin-bottom:3px;}
+.booked-card-time{font-size:15px;font-weight:600;color:#1e293b;}
+.booked-card-status{padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600;}
+.booked-card-status.confirmed{background:#dcfce7;color:#15803d;}
+.booked-card-status.pending-s{background:#fef9c3;color:#854d0e;}
+.no-bookings{text-align:center;padding:40px 20px;color:#94a3b8;font-size:15px;}
+
+/* Feedback */
+.feedback-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 20px;color:#94a3b8;text-align:center;}
+.feedback-empty svg{width:48px;height:48px;margin-bottom:14px;opacity:0.4;}
+.feedback-empty p{font-size:15px;}
+
+/* ── Interview Candidates panel ── */
+.ic-panel { padding: 0; }
+
+.ic-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 20px 14px;
+  border-bottom: 1px solid #eee;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.ic-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.ic-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 8px 14px;
+  background: #fff;
+  min-width: 260px;
+}
+.ic-search svg { width: 16px; height: 16px; color: #94a3b8; flex-shrink: 0; }
+.ic-search input {
+  border: none;
+  outline: none;
+  font-size: 13px;
+  color: #334155;
+  background: transparent;
+  width: 100%;
+}
+.ic-search input::placeholder { color: #94a3b8; }
+
+.ic-upload-btn {
+  width: 38px;
+  height: 38px;
+  background: #6c63ff;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+  flex-shrink: 0;
+}
+.ic-upload-btn:hover { background: #5648ff; }
+.ic-upload-btn svg { width: 18px; height: 18px; color: #fff; }
+
+/* Purple thead */
+.ic-thead th {
+  background: #6c63ff;
+  color: #fff;
+  font-weight: 600;
+  font-size: 13px;
+  padding: 13px 20px;
+}
+.ic-thead th:first-child { border-radius: 0; }
+.ic-thead th:last-child  { border-radius: 0; }
+
+/* Colored status text (no pill background) */
+.ic-status { font-size: 13px; font-weight: 600; }
+.ic-completed { color: #16a34a; }
+.ic-yts       { color: #ea580c; }
+.ic-noshow    { color: #dc2626; }
+.ic-pending   { color: #d97706; }
+
+/* ── Resume Upload Modal ── */
+.resume-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.45);
+  z-index: 2000;
+  display: none;
+  align-items: center;
+  justify-content: center;
+}
+.resume-overlay.open { display: flex; }
+
+.resume-modal {
+  background: #fff;
+  border-radius: 16px;
+  padding: 32px 36px;
+  width: 480px;
+  max-width: 95vw;
+  position: relative;
+  animation: fadeUp 0.22s ease;
+}
+@keyframes fadeUp {
+  from { transform: translateY(20px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+
+.resume-modal-close {
+  position: absolute; top: 14px; right: 16px;
+  background: none; border: none; font-size: 22px;
+  cursor: pointer; color: #94a3b8; line-height: 1;
+}
+.resume-modal-close:hover { color: #334155; }
+
+.resume-modal-title {
+  font-size: 18px; font-weight: 700; color: #1e293b; margin-bottom: 6px;
+}
+.resume-modal-sub {
+  font-size: 13px; color: #64748b; margin-bottom: 22px;
+}
+
+.resume-drop-zone {
+  border: 2px dashed #c7d2fe;
+  border-radius: 12px;
+  padding: 36px 20px;
+  text-align: center;
+  cursor: pointer;
+  background: #f8f7ff;
+  transition: border-color 0.2s, background 0.2s;
+  margin-bottom: 20px;
+}
+.resume-drop-zone:hover, .resume-drop-zone.dragover {
+  border-color: #6c63ff;
+  background: #ede9ff;
+}
+.resume-drop-zone svg {
+  width: 40px; height: 40px; color: #6c63ff;
+  margin-bottom: 12px;
+}
+.resume-drop-zone p { font-size: 14px; color: #475569; margin-bottom: 6px; }
+.resume-drop-zone span { font-size: 12px; color: #94a3b8; }
+
+.resume-file-info {
+  display: none;
+  align-items: center;
+  gap: 12px;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 10px;
+  padding: 12px 16px;
+  margin-bottom: 20px;
+}
+.resume-file-info.show { display: flex; }
+.resume-file-info svg { width: 22px; height: 22px; color: #16a34a; flex-shrink: 0; }
+.resume-file-name { font-size: 13px; font-weight: 600; color: #15803d; flex: 1; word-break: break-all; }
+.resume-file-remove { background: none; border: none; cursor: pointer; color: #94a3b8; font-size: 18px; line-height: 1; }
+.resume-file-remove:hover { color: #ef4444; }
+
+.resume-modal-actions { display: flex; gap: 10px; justify-content: flex-end; }
+.resume-cancel-btn {
+  padding: 9px 22px; border-radius: 8px;
+  border: 1px solid #e2e8f0; background: #fff;
+  font-size: 14px; cursor: pointer; color: #64748b;
+  transition: background 0.15s;
+}
+.resume-cancel-btn:hover { background: #f8fafc; }
+.resume-submit-btn {
+  padding: 9px 22px; border-radius: 8px;
+  border: none; background: #6c63ff;
+  font-size: 14px; font-weight: 600; cursor: pointer; color: #fff;
+  transition: background 0.15s;
+}
+.resume-submit-btn:hover { background: #5648ff; }
+.resume-submit-btn:disabled { background: #c4bfff; cursor: not-allowed; }
+
+/* ═══════════════════════════════════════════════════════
+   TABLET RESPONSIVE  (768px – 1024px)
+   ═══════════════════════════════════════════════════════ */
+@media (min-width: 768px) and (max-width: 1024px) {
+
+  /* ── Body / layout ── */
+  body { height: auto; overflow: auto; flex-direction: row; }
+
+  /* ── Sidebar: icon-rail by default, overlay when expanded ── */
+  .sidebar {
+    width: 72px !important;
+    position: fixed !important;
+    top: 0; left: 0;
+    height: 100vh;
+    z-index: 50;
+    overflow: hidden;
+    padding: 16px 10px;
+    transition: width 0.3s ease;
+  }
+  .sidebar .logo-wrap { opacity: 0; width: 0; pointer-events: none; }
+  .sidebar .menu-item { justify-content: center; padding: 14px; gap: 0; }
+  .sidebar .menu-item .label { opacity: 0; width: 0; overflow: hidden; }
+  .sidebar .menu-item .dropdown-arrow { opacity: 0; width: 0; }
+  .sidebar .submenu { max-height: 0 !important; opacity: 0 !important; overflow: hidden; margin: 0 !important; pointer-events: none; }
+  .sidebar-header { justify-content: center; }
+
+  /* Expanded state via JS */
+  .sidebar.tablet-open { width: 240px !important; overflow-y: auto !important; overflow-x: hidden !important; }
+  .sidebar.tablet-open .logo-wrap { opacity: 1; width: auto; pointer-events: auto; }
+  .sidebar.tablet-open .menu-item { justify-content: flex-start; padding: 14px 18px; gap: 14px; }
+  .sidebar.tablet-open .menu-item .label { opacity: 1; width: auto; overflow: visible; }
+  .sidebar.tablet-open .menu-item .dropdown-arrow { opacity: 1; width: auto; }
+  .sidebar.tablet-open .sidebar-header { justify-content: space-between; }
+  .sidebar.tablet-open .submenu { max-height: 200px !important; opacity: 1 !important; pointer-events: auto; margin-left: 30px !important; }
+  .sidebar.tablet-open .submenu.closed { max-height: 0 !important; opacity: 0 !important; pointer-events: none; margin: 0 !important; }
+
+  /* Overlay backdrop */
+  #tabletOverlay {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.35);
+    z-index: 49;
+  }
+  #tabletOverlay.show { display: block; }
+
+  /* ── Main area: push right of sidebar rail ── */
+  .main {
+    margin-left: 72px;
+    width: calc(100% - 72px);
+    min-width: 0;
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ── Header ── */
+  .header {
+    height: 72px;
+    padding: 0 18px;
+    flex-shrink: 0;
+  }
+  .notify { font-size: 20px; }
+  .avatar { width: 42px; height: 42px; }
+  .user-info h3 { font-size: 14px; }
+  .user-info p { font-size: 12px; }
+
+  /* ── Content ── */
+  .content {
+    padding: 18px 18px 24px;
+    overflow-y: auto;
+    flex: 1;
+  }
+
+  /* ── Title + Tabs row ── */
+  .title-tabs-row {
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  .title { font-size: 20px; margin-bottom: 0; }
+  .tabs { margin-bottom: 0; border-radius: 10px; }
+  .tab { flex: none; padding: 12px 16px; font-size: 13px; }
+
+  /* ── Job card ── */
+  .job-card { padding: 18px; border-radius: 12px; margin-bottom: 16px; }
+  .job-title { font-size: 18px; }
+  .location { font-size: 13px; }
+
+  /* Stats: 2×2 grid on tablet */
+  .stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin: 16px 0;
+  }
+  .stat {
+    font-size: 15px;
+    padding: 12px 14px;
+    border-radius: 8px;
+  }
+
+  /* ── Tags wrap nicely ── */
+  .tags { gap: 8px; }
+  .tag-box { font-size: 13px; padding: 6px 12px; }
+  .criteria { gap: 8px; flex-wrap: wrap; }
+
+  /* ── Panels: horizontal scroll for tables ── */
+  .panel { border-radius: 10px; margin-bottom: 16px; }
+  .panel-title { font-size: 16px; padding: 14px 16px; }
+  .panel-title-row { padding: 12px 16px; gap: 10px; flex-wrap: wrap; }
+  .panel-title-row .panel-title { padding: 0; }
+
+  th { padding: 11px 14px; font-size: 13px; }
+  td { padding: 10px 14px; font-size: 13px; }
+
+  /* Active panel search: full width on smaller tablets */
+  .ic-search { min-width: 180px !important; }
+  .ic-header { flex-wrap: wrap; gap: 10px; padding: 14px 16px; }
+  .ic-controls { gap: 8px; flex-wrap: wrap; }
+
+  /* ── Modal: full width slide-in panel ── */
+  .panel-modal {
+    width: 92% !important;
+    max-width: 92vw !important;
+    padding: 24px 20px;
+    height: 100vh;
+    overflow-y: auto;
+  }
+  .modal-meta {
+    flex-wrap: wrap;
+    gap: 14px;
+    font-size: 13px;
+    margin-bottom: 18px;
+  }
+  .slot-legend {
+    margin-left: 0 !important;
+    flex-wrap: wrap;
+    gap: 10px;
+    font-size: 12px;
+  }
+  .modal-title { font-size: 17px; }
+
+  /* Calendar + slots: stack vertically on tablet */
+  .modal-body {
+    flex-direction: column;
+    gap: 20px;
+  }
+  .calendar-wrap {
+    min-width: unset !important;
+    width: 100%;
+  }
+  .slot-grid {
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    gap: 10px;
+  }
+
+  /* ── Resume modal: full width ── */
+  .resume-modal {
+    width: calc(100vw - 32px) !important;
+    max-width: 500px !important;
+    padding: 24px 20px;
+  }
+
+  /* ── Touch targets ── */
+  button, .tab, .menu-item, .dot-btn {
+    min-height: 40px;
+  }
+}
+
+/* ── Portrait tablet adjustments (768–860px) ── */
+@media (min-width: 768px) and (max-width: 860px) {
+  .stat { font-size: 13px; padding: 10px 12px; }
+  .title { font-size: 20px; }
+  .tab { padding: 12px 14px; font-size: 13px; }
+  .modal-meta { font-size: 12px; }
+  .header { height: 64px; }
+}
+
+</style>
+</head>
+<body>
+
+<div id="tabletOverlay"></div>
+
+<div class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <div class="logo-wrap">
+      <img 
+        src="logo.png" 
+        alt="Flexwork Logo"
+        class="w-32 h-auto object-contain"
+    >
+    </div>
+    <button class="hamburger-btn" id="hamburgerBtn" aria-label="Toggle sidebar">☰</button>
+  </div>
+
+  <div class="menu">
+    <div class="menu-item">
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>
+      <span class="label">Dashboard</span>
+    </div>
+    <div class="menu-item">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16"><path d="M12.5 16a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7m.5-5v1h1a.5.5 0 0 1 0 1h-1v1a.5.5 0 0 1-1 0v-1h-1a.5.5 0 0 1 0-1h1v-1a.5.5 0 0 1 1 0m-2-6a3 3 0 1 1-6 0 3 3 0 0 1 6 0"/><path d="M2 13c0 1 1 1 1 1h5.256A4.5 4.5 0 0 1 8 12.5a4.5 4.5 0 0 1 1.544-3.393Q8.844 9.002 8 9c-5 0-6 3-6 4"/></svg>
+      <span class="label">Agents</span>
+    </div>
+    <div class="menu-item active" id="servicesItem">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16"><path d="M8.186 1.113a.5.5 0 0 0-.372 0L1.846 3.5l2.404.961L10.404 2zm3.564 1.426L5.596 5 8 5.961 14.154 3.5zm3.25 1.748-5.85 2.34v7.195l5.67-2.268A.5.5 0 0 0 15 11.13V4.5a.5.5 0 0 0-.314-.464zM8.5 14.715V7.625l-5.85-2.34v6.634a.5.5 0 0 0 .314.464zM6 11.333V9.667a.5.5 0 0 1 .5-.5h3a.5.5 0 0 1 .5.5v1.666a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5"/></svg>
+      <span class="label">Our Services</span>
+      <span class="dropdown-arrow open" id="dropdownArrow">▾</span>
+    </div>
+    <div class="submenu" id="submenu">
+      <div class="selected">Interview Panel</div>
+      <div>Consultants</div>
+      <div>Trainer</div>
+    </div>
+    <div class="menu-item">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16"><path d="M3 4.5a.5.5 0 0 1 .5-.5h6a.5.5 0 1 1 0 1h-6a.5.5 0 0 1-.5-.5m0 2a.5.5 0 0 1 .5-.5h6a.5.5 0 1 1 0 1h-6a.5.5 0 0 1-.5-.5m0 2a.5.5 0 0 1 .5-.5h6a.5.5 0 1 1 0 1h-6a.5.5 0 0 1-.5-.5m0 2a.5.5 0 0 1 .5-.5h6a.5.5 0 0 1 0 1h-6a.5.5 0 0 1-.5-.5m0 2a.5.5 0 0 1 .5-.5h6a.5.5 0 0 1 0 1h-6a.5.5 0 0 1-.5-.5"/><path d="M1.92.506a.5.5 0 0 1 .434.14L3 1.293l.646-.647a.5.5 0 0 1 .708 0L5 1.293l.646-.647a.5.5 0 0 1 .708 0L7 1.293l.646-.647a.5.5 0 0 1 .708 0L9 1.293l.646-.647a.5.5 0 0 1 .708 0l.646.647.646-.647a.5.5 0 0 1 .708 0l.646.647.646-.647a.5.5 0 0 1 .801.13l.5 1A.5.5 0 0 1 15 2v12a.5.5 0 0 1-.053.224l-.5 1a.5.5 0 0 1-.8.13L13 14.707l-.646.647a.5.5 0 0 1-.708 0L11 14.707l-.646.647a.5.5 0 0 1-.708 0L9 14.707l-.646.647a.5.5 0 0 1-.708 0L7 14.707l-.646.647a.5.5 0 0 1-.708 0L5 14.707l-.646.647a.5.5 0 0 1-.708 0L3 14.707l-.646.647a.5.5 0 0 1-.801-.13l-.5-1A.5.5 0 0 1 1 14V2a.5.5 0 0 1 .053-.224l.5-1a.5.5 0 0 1 .367-.27M2 2v11.538l.52-.26a.5.5 0 0 1 .515.039l.612.408.613-.408a.5.5 0 0 1 .554 0l.613.408.612-.408a.5.5 0 0 1 .554 0l.613.408.612-.408a.5.5 0 0 1 .554 0l.613.408.612-.408a.5.5 0 0 1 .554 0l.613.408.612-.408a.5.5 0 0 1 .515-.039l.52.26V2z"/></svg>
+      <span class="label">Invoices</span>
+    </div>
+    <div class="menu-item">
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>
+      <span class="label">Payments</span>
+    </div>
+  </div>
+</div>
+
+<div class="main">
+  <div class="header">
+    <div class="profile">
+      <div class="notify">🔔</div>
+      <div class="avatar"><img src="https://i.pravatar.cc/100?img=44"></div>
+      <div class="user-info">
+        <h3>Hello Christina</h3>
+        <p>Flex Dev22</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="content">
+    <div class="title-tabs-row">
+      <div class="title">Interview Panel</div>
+      <div class="tabs">
+        <div class="tab">Job Posting</div>
+        <div class="tab">Job Requirement</div>
+        <div class="tab active">Ongoing Requirement</div>
+      </div>
+    </div>
+
+    <div class="job-card">
+      <div class="job-title">OS Developer</div>
+      <div class="location">Tech Innovations | New York, NY</div>
+      <div class="stats">
+        <div class="stat purple"><span>All Applications</span><span>6</span></div>
+        <div class="stat green"><span>Accepted</span><span>2</span></div>
+        <div class="stat red"><span>Rejected</span><span>3</span></div>
+        <div class="stat yellow"><span>Pending</span><span>1</span></div>
+      </div>
+      <div class="desc-title">Job Description: OS Developer</div>
+      <ul>
+        <li>Develop and maintain OS-level applications and tools.</li>
+        <li>Collaborate with cross-functional teams.</li>
+        <li>Troubleshoot and optimize system performance.</li>
+      </ul>
+      <div class="tags">
+        <div class="tag-box">JAVA</div>
+        <div class="tag-box">.NQL</div>
+        <div class="tag-box">API Testing</div>
+        <div class="tag-box">HTML/CSS</div>
+        <div class="tag-box">Git</div>
+      </div>
+      <div class="criteria">
+        <strong>Interview Criteria's:</strong>
+        <div class="tag-box">Soft Skills</div>
+        <div class="tag-box">Communication Skills</div>
+        <div class="tag-box">Problem Solving</div>
+      </div>
+    </div>
+
+    <!-- Active Panel -->
+    <div class="panel">
+      <div class="panel-title-row">
+        <div class="panel-title" style="border:none;">Active Panel</div>
+        <div class="ic-search" style="min-width:220px;">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path stroke-linecap="round" d="m21 21-4.35-4.35"/></svg>
+          <input type="text" placeholder="Search Active Panel" oninput="filterActivePanel(this.value)" />
+        </div>
+      </div>
+      <div class="table-scroll-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Candidate</th>
+              <th>Position</th>
+            <th>Email</th>
+            <th>Interview Date</th>
+            <th>Status</th>
+            <th>Action</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody class="active-panel-tbody">
+          <tr>
+            <td>GENERIA MATATA</td>
+            <td>MATATA</td>
+            <td>Interveise@obmail.com</td>
+            <td>03/07/2023</td>
+            <td><span class="status pending">Pending</span></td>
+            <!-- View opens booked slots -->
+            <td><button class="action-btn" onclick="openPanelModal('GENERIA','MATATA','FW-CAND15','booked')">View</button></td>
+            <td><button class="action-btn" onclick="openPanelModal('GENERIA','MATATA','FW-CAND15','schedule')">Schedule</button></td>
+          </tr>
+          <tr>
+            <td>GENERAL PRACTITIONER</td>
+            <td>PRACTITIONER</td>
+            <td>Laura@jobmail.com</td>
+            <td>03/07/2023</td>
+            <td><span class="status schedule">Schedule</span></td>
+            <td><button class="action-btn" onclick="openPanelModal('GENERAL','PRACTITIONER','FW-CAND16','booked')">View</button></td>
+            <td><button class="action-btn" onclick="openPanelModal('GENERAL','PRACTITIONER','FW-CAND16','schedule')">Schedule</button></td>
+          </tr>
+        </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="panel ic-panel">
+      <div class="ic-header">
+        <div class="panel-title" style="border:none;padding:0;">Interview Candidates</div>
+        <div class="ic-controls">
+          <div class="ic-search">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path stroke-linecap="round" d="m21 21-4.35-4.35"/></svg>
+            <input type="text" id="icSearchInput" placeholder="Search Interview Candidates" oninput="filterCandidates()" />
+          </div>
+          <button class="ic-upload-btn" onclick="openResumeUpload()">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1M12 12V4m0 0L8 8m4-4 4 4"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="table-scroll-wrap">
+      <table id="icTable">
+        <thead>
+          <tr>
+            <th>Firstname</th>
+            <th>Lastname</th>
+            <th>Email</th>
+            <th>Mobile</th>
+            <th>Status</th>
+            <th>Slot Date</th>
+            <th>Slot Time</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="icTbody">
+          <tr>
+            <td>HakUNa</td>
+            <td>MATATA</td>
+            <td>Vishal.user@mailinator.com</td>
+            <td>8876366733</td>
+            <td><span class="status completed">Completed</span></td>
+            <td>2026-03-20</td>
+            <td>04:30 PM - 05:00 PM</td>
+            <td class="action-cell">
+              <button class="dot-btn" data-menu-id="dotMenu1" onclick="toggleDotMenu(event, this)">⋮</button>
+              <div class="dot-menu" id="dotMenu1">
+                <div class="dot-menu-item" onclick="closeDotMenus();openPanelModal('HakUNa','MATATA','FW-CAND15','feedback')">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                  View Feedback
+                </div>
+                <div class="dot-menu-item">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                  Download
+                </div>
+                <div class="dot-menu-item">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                  Edit
+                </div>
+                <div class="dot-menu-item danger">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                  Delete
+                </div>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td>GENERAL</td>
+            <td>PRACTITIONER</td>
+            <td>Sekhar.panel@mailinator.com</td>
+            <td>6304335196</td>
+            <td><span class="status completing">Yet to Schedule</span></td>
+            <td></td>
+            <td></td>
+            <td class="action-cell">
+              <button class="dot-btn" data-menu-id="dotMenu2" onclick="toggleDotMenu(event, this)">⋮</button>
+              <div class="dot-menu" id="dotMenu2">
+                <div class="dot-menu-item" onclick="closeDotMenus();openPanelModal('GENERAL','PRACTITIONER','FW-CAND16','feedback')">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                  View Feedback
+                </div>
+                <div class="dot-menu-item">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                  Download
+                </div>
+                <div class="dot-menu-item">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                  Edit
+                </div>
+                <div class="dot-menu-item danger">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                  Delete
+                </div>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td>GENERAL</td>
+            <td>PRACTITIONER</td>
+            <td>kai@mailinator.com</td>
+            <td>6785550103</td>
+            <td><span class="status completed">Completed</span></td>
+            <td>2026-03-21</td>
+            <td>09:45 AM - 10:15 AM</td>
+            <td class="action-cell">
+              <button class="dot-btn" data-menu-id="dotMenu3" onclick="toggleDotMenu(event, this)">⋮</button>
+              <div class="dot-menu" id="dotMenu3">
+                <div class="dot-menu-item" onclick="closeDotMenus();openPanelModal('GENERAL','PRACTITIONER','FW-CAND17','feedback')">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                  View Feedback
+                </div>
+                <div class="dot-menu-item">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                  Download
+                </div>
+                <div class="dot-menu-item">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                  Edit
+                </div>
+                <div class="dot-menu-item danger">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                  Delete
+                </div>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td>HakUNa</td>
+            <td>PRACTITIONER</td>
+            <td>Sekhar.user2@mailinator.com</td>
+            <td>6304335196</td>
+            <td><span class="status" style="background:#fee2e2;color:#dc2626;">No Show</span></td>
+            <td>2026-03-21</td>
+            <td>04:15 PM - 05:15 PM</td>
+            <td class="action-cell">
+              <button class="dot-btn" data-menu-id="dotMenu4" onclick="toggleDotMenu(event, this)">⋮</button>
+              <div class="dot-menu" id="dotMenu4">
+                <div class="dot-menu-item" onclick="closeDotMenus();openPanelModal('HakUNa','PRACTITIONER','FW-CAND18','feedback')">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                  View Feedback
+                </div>
+                <div class="dot-menu-item">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                  Download
+                </div>
+                <div class="dot-menu-item">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                  Edit
+                </div>
+                <div class="dot-menu-item danger">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                  Delete
+                </div>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      </div>
+    </div> for resume upload -->
+    <input type="file" id="resumeFileInput" accept=".pdf,.doc,.docx" style="display:none" onchange="handleResumeFile(event)" />
+
+  </div>
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="panelModal" onclick="handleOverlayClick(event)">
+  <div class="panel-modal">
+    <button class="modal-close" onclick="closePanelModal()">✕</button>
+
+    <div class="modal-title-row">
+      <div class="modal-title">Panel Details</div>
+      <span class="modal-mode-badge" id="modalModeBadge">Schedule</span>
+    </div>
+
+    <div class="modal-meta">
+      <div><span>Reference ID : </span><strong id="modalRefId">FW-CAND15</strong></div>
+      <div><span>FirstName : </span><strong id="modalFirst">—</strong></div>
+      <div><span>LastName : </span><strong id="modalLast">—</strong></div>
+      <div class="slot-legend" id="slotLegend">
+        <span><span class="legend-dot green"></span>Slots Available</span>
+        <span><span class="legend-dot yellow"></span>Partially Filled</span>
+        <span><span class="legend-dot red"></span>Slots Soldout</span>
+      </div>
+    </div>
+
+    <!-- BOOKED VIEW -->
+    <div id="bookedView" style="display:none;">
+      <div class="modal-section-title">Candidate Booked Slots</div>
+      <div id="bookedList"></div>
+    </div>
+
+    <!-- FEEDBACK VIEW -->
+    <div id="feedbackView" style="display:none;">
+      <div class="modal-section-title">Interview Feedback</div>
+      <div id="feedbackContent"></div>
+    </div>
+
+    <!-- SCHEDULE VIEW -->
+    <div id="scheduleView" style="display:none;">
+      <div class="modal-section-title">Select Date &amp; Time</div>
+      <div class="modal-body">
+        <div class="calendar-wrap">
+          <div class="cal-header">
+            <button class="cal-nav" id="calPrev">&#8249;</button>
+            <span id="calMonthYear">MAY 2026</span>
+            <button class="cal-nav" id="calNext">&#8250;</button>
+          </div>
+          <div class="cal-grid" id="calGrid"></div>
+        </div>
+        <div class="slot-panel">
+          <div class="slot-date-title" id="slotDateTitle">23 Saturday</div>
+          <div class="slot-grid" id="slotGrid"></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  // ── Sidebar ──────────────────────────────────────────────
+  const sidebar = document.getElementById('sidebar');
+  const hamburgerBtn = document.getElementById('hamburgerBtn');
+  const servicesItem = document.getElementById('servicesItem');
+  const submenu = document.getElementById('submenu');
+  const dropdownArrow = document.getElementById('dropdownArrow');
+  const tabletOverlay = document.getElementById('tabletOverlay');
+
+  let submenuOpen = true; // starts open
+
+  function isTablet() {
+    return window.innerWidth >= 768 && window.innerWidth <= 1024;
+  }
+
+  // ── Hamburger: toggle sidebar open/closed ──
+  hamburgerBtn.addEventListener('click', () => {
+    if (isTablet()) {
+      const opening = !sidebar.classList.contains('tablet-open');
+      sidebar.classList.toggle('tablet-open');
+      tabletOverlay.classList.toggle('show', opening);
+    } else {
+      sidebar.classList.toggle('collapsed');
+    }
+  });
+
+  tabletOverlay.addEventListener('click', () => {
+    sidebar.classList.remove('tablet-open');
+    tabletOverlay.classList.remove('show');
+  });
+
+  // ── Our Services: always just toggle the submenu ──
+  servicesItem.addEventListener('click', function(e) {
+    e.stopPropagation();
+
+    // If sidebar is collapsed/icon-only on tablet, expand it first
+    if (isTablet() && !sidebar.classList.contains('tablet-open')) {
+      sidebar.classList.add('tablet-open');
+      tabletOverlay.classList.add('show');
+      // make sure submenu is visible after expanding
+      submenuOpen = true;
+      submenu.classList.remove('closed');
+      dropdownArrow.classList.add('open');
+      return;
+    }
+
+    // If desktop sidebar is collapsed, expand it first
+    if (!isTablet() && sidebar.classList.contains('collapsed')) {
+      sidebar.classList.remove('collapsed');
+      submenuOpen = true;
+      submenu.classList.remove('closed');
+      dropdownArrow.classList.add('open');
+      return;
+    }
+
+    // Sidebar is expanded — just toggle the submenu
+    submenuOpen = !submenuOpen;
+    if (submenuOpen) {
+      submenu.classList.remove('closed');
+      dropdownArrow.classList.add('open');
+    } else {
+      submenu.classList.add('closed');
+      dropdownArrow.classList.remove('open');
+    }
+  });
+
+  window.addEventListener('resize', () => {
+    if (!isTablet()) {
+      tabletOverlay.classList.remove('show');
+      sidebar.classList.remove('tablet-open');
+    }
+  });
+
+  // ── 3-Dot Menu — portal pattern (appended to body) ───────
+  // Move all dot-menus to <body> on page load so they are never
+  // clipped by any ancestor overflow or height constraint.
+  document.querySelectorAll('.dot-menu').forEach(menu => {
+    document.body.appendChild(menu);
+  });
+
+  let _activeMenu = null;
+
+  function toggleDotMenu(event, btn) {
+    event.stopPropagation();
+    const menuId = btn.getAttribute('data-menu-id');
+    const menu = document.getElementById(menuId);
+    const isOpen = menu === _activeMenu;
+    closeDotMenus();
+    if (!isOpen) {
+      menu.classList.add('open');
+      _activeMenu = menu;
+      positionDotMenu(btn, menu);
+    }
+  }
+
+  function positionDotMenu(btn, menu) {
+    const rect = btn.getBoundingClientRect();
+    const menuWidth = 175;
+    let top  = rect.bottom + 4;
+    let left = rect.right - menuWidth;
+    if (left < 8) left = rect.left;
+    // If menu would go below viewport, open upward
+    const estHeight = 180;
+    if (top + estHeight > window.innerHeight) {
+      top = rect.top - estHeight - 4;
+    }
+    menu.style.top  = top  + 'px';
+    menu.style.left = left + 'px';
+  }
+
+  function closeDotMenus() {
+    document.querySelectorAll('.dot-menu.open').forEach(m => m.classList.remove('open'));
+    _activeMenu = null;
+  }
+
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('.dot-btn') && !e.target.closest('.dot-menu')) closeDotMenus();
+  });
+
+  document.querySelector('.content').addEventListener('scroll', closeDotMenus);
+
+  // ── Mock Data ─────────────────────────────────────────────
+  const MOCK_BOOKINGS = {
+    'FW-CAND15': [
+      { date: '2026-03-09', time: '04:30 PM – 05:00 PM', status: 'confirmed' },
+      { date: '2026-03-21', time: '09:45 AM – 10:15 AM', status: 'confirmed' },
+    ],
+    'FW-CAND16': [],
+  };
+
+  // ── Modal ─────────────────────────────────────────────────
+  function openPanelModal(first, last, refId, mode) {
+    document.getElementById('modalFirst').textContent = first;
+    document.getElementById('modalLast').textContent = last;
+    document.getElementById('modalRefId').textContent = refId;
+
+    const badge       = document.getElementById('modalModeBadge');
+    const bookedView  = document.getElementById('bookedView');
+    const feedbackView= document.getElementById('feedbackView');
+    const scheduleView= document.getElementById('scheduleView');
+    const legend      = document.getElementById('slotLegend');
+
+    // Hide all panels first
+    bookedView.style.display   = 'none';
+    feedbackView.style.display = 'none';
+    scheduleView.style.display = 'none';
+    legend.style.display       = 'none';
+
+    if (mode === 'booked') {
+      badge.textContent = 'Booked Slots';
+      badge.className   = 'modal-mode-badge view-mode';
+      bookedView.style.display = 'block';
+      renderBookedSlots(refId);
+
+    } else if (mode === 'feedback') {
+      badge.textContent = 'Feedback';
+      badge.className   = 'modal-mode-badge view-mode';
+      feedbackView.style.display = 'block';
+      renderFeedbackView(refId);
+
+    } else {
+      // schedule (default)
+      badge.textContent = 'Schedule';
+      badge.className   = 'modal-mode-badge';
+      scheduleView.style.display = 'block';
+      legend.style.display       = 'flex';
+      renderCalendar();
+      renderSlots();
+    }
+
+    document.getElementById('panelModal').classList.add('open');
+  }
+
+  function renderBookedSlots(refId) {
+    const list = document.getElementById('bookedList');
+    const bookings = MOCK_BOOKINGS[refId] || [];
+    if (!bookings.length) {
+      list.innerHTML = '<div class="no-bookings">No booked slots found for this candidate.</div>';
+      return;
+    }
+    list.innerHTML = bookings.map(b => `
+      <div class="booked-card">
+        <div class="booked-card-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+          </svg>
+        </div>
+        <div class="booked-card-info">
+          <div class="booked-card-date">${b.date}</div>
+          <div class="booked-card-time">${b.time}</div>
+        </div>
+        <span class="booked-card-status ${b.status === 'confirmed' ? 'confirmed' : 'pending-s'}">${b.status.toUpperCase()}</span>
+      </div>`).join('');
+  }
+
+  function renderFeedbackView(refId) {
+    // Intentionally blank as requested
+    document.getElementById('feedbackContent').innerHTML =
+      '<div class="feedback-empty">' +
+        '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">' +
+          '<path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>' +
+        '</svg>' +
+        '<p>No feedback available yet.</p>' +
+      '</div>';
+  }
+
+  function closePanelModal() { document.getElementById('panelModal').classList.remove('open'); }
+  function handleOverlayClick(e) { if (e.target.id === 'panelModal') closePanelModal(); }
+
+  // ── Calendar ──────────────────────────────────────────────
+  let currentYear = 2026, currentMonth = 4, selectedDay = 23;
+  const MONTH_NAMES = ['JANUARY','FEBRUARY','MARCH','APRIL','MAY','JUNE','JULY','AUGUST','SEPTEMBER','OCTOBER','NOVEMBER','DECEMBER'];
+  const DAY_NAMES   = ['S','M','T','W','T','F','S'];
+
+  function renderCalendar() {
+    const grid = document.getElementById('calGrid');
+    if (!grid) return;
+    grid.innerHTML = DAY_NAMES.map(d => `<div class="cal-day-name">${d}</div>`).join('');
+    const firstDay    = new Date(currentYear, currentMonth, 1).getDay();
+    const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+    for (let i = 0; i < firstDay; i++) grid.innerHTML += '<div class="cal-day empty"></div>';
+    for (let d = 1; d <= daysInMonth; d++) {
+      const el = document.createElement('div');
+      el.className = `cal-day${d === selectedDay ? ' selected' : ''}`;
+      el.textContent = d;
+      el.onclick = () => { selectedDay = d; renderCalendar(); renderSlots(); };
+      grid.appendChild(el);
+    }
+    document.getElementById('calMonthYear').textContent = `${MONTH_NAMES[currentMonth]} ${currentYear}`;
+  }
+
+  function renderSlots() {
+    const grid = document.getElementById('slotGrid');
+    if (!grid) return;
+    const slots = [
+      { time: '09:00 AM', type: 'available' },
+      { time: '10:00 AM', type: 'available' },
+      { time: '11:00 AM', type: 'partial'   },
+      { time: '01:00 PM', type: 'soldout'   },
+      { time: '02:00 PM', type: 'available' },
+      { time: '03:30 PM', type: 'partial'   },
+    ];
+    const labels = { available: 'Available', partial: 'Partially Filled', soldout: 'Sold Out' };
+    grid.innerHTML = slots.map(s => `
+      <div class="slot-chip ${s.type}" ${s.type === 'soldout' ? '' : `onclick="selectSlot(this)"`}>
+        ${s.time}
+        <div class="slot-label">${labels[s.type]}</div>
+      </div>`).join('');
+  }
+
+  function selectSlot(el) {
+    document.querySelectorAll('.slot-chip.selected-slot').forEach(c => {
+      c.classList.remove('selected-slot');
+    });
+    el.classList.add('selected-slot');
+  }
+
+  document.getElementById('calPrev').addEventListener('click', () => {
+    currentMonth--; if (currentMonth < 0) { currentMonth = 11; currentYear--; }
+    renderCalendar(); renderSlots();
+  });
+  document.getElementById('calNext').addEventListener('click', () => {
+    currentMonth++; if (currentMonth > 11) { currentMonth = 0; currentYear++; }
+    renderCalendar(); renderSlots();
+  });
+</script>
+<!-- RESUME UPLOAD MODAL -->
+<div class="resume-overlay" id="resumeModal" onclick="handleResumeOverlayClick(event)">
+  <div class="resume-modal">
+    <button class="resume-modal-close" onclick="closeResumeUpload()">✕</button>
+    <div class="resume-modal-title">Upload Resume</div>
+    <div class="resume-modal-sub">Accepted formats: PDF, DOC, DOCX · Max 10 MB</div>
+
+    <div class="resume-drop-zone" id="resumeDropZone"
+         onclick="document.getElementById('resumeFileInput').click()"
+         ondragover="handleDragOver(event)"
+         ondragleave="handleDragLeave(event)"
+         ondrop="handleDrop(event)">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+      </svg>
+      <p>Click to browse or drag &amp; drop your resume here</p>
+      <span>PDF, DOC, DOCX supported</span>
+    </div>
+
+    <div class="resume-file-info" id="resumeFileInfo">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+      </svg>
+      <span class="resume-file-name" id="resumeFileName">resume.pdf</span>
+      <button class="resume-file-remove" onclick="clearResumeFile()">✕</button>
+    </div>
+
+    <div class="resume-modal-actions">
+      <button class="resume-cancel-btn" onclick="closeResumeUpload()">Cancel</button>
+      <button class="resume-submit-btn" id="resumeSubmitBtn" disabled onclick="submitResume()">Upload Resume</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ── Search filter ─────────────────────────────────────────
+  function filterCandidates() {
+    const q = document.getElementById('icSearchInput').value.toLowerCase();
+    document.querySelectorAll('#icTbody tr').forEach(row => {
+      row.style.display = row.textContent.toLowerCase().includes(q) ? '' : 'none';
+    });
+  }
+
+  function filterActivePanel(val) {
+    const q = val.toLowerCase();
+    document.querySelectorAll('.active-panel-tbody tr').forEach(row => {
+      row.style.display = row.textContent.toLowerCase().includes(q) ? '' : 'none';
+    });
+  }
+
+  // ── Resume upload modal ───────────────────────────────────
+  function openResumeUpload() {
+    document.getElementById('resumeModal').classList.add('open');
+  }
+  function closeResumeUpload() {
+    document.getElementById('resumeModal').classList.remove('open');
+    clearResumeFile();
+  }
+  function handleResumeOverlayClick(e) {
+    if (e.target.id === 'resumeModal') closeResumeUpload();
+  }
+
+  function handleResumeFile(e) {
+    const file = e.target.files[0];
+    if (file) showResumeFile(file);
+  }
+
+  function showResumeFile(file) {
+    document.getElementById('resumeFileName').textContent = file.name;
+    document.getElementById('resumeFileInfo').classList.add('show');
+    document.getElementById('resumeDropZone').style.display = 'none';
+    document.getElementById('resumeSubmitBtn').disabled = false;
+  }
+
+  function clearResumeFile() {
+    document.getElementById('resumeFileInput').value = '';
+    document.getElementById('resumeFileInfo').classList.remove('show');
+    document.getElementById('resumeDropZone').style.display = '';
+    document.getElementById('resumeSubmitBtn').disabled = true;
+  }
+
+  function handleDragOver(e) {
+    e.preventDefault();
+    document.getElementById('resumeDropZone').classList.add('dragover');
+  }
+  function handleDragLeave(e) {
+    document.getElementById('resumeDropZone').classList.remove('dragover');
+  }
+  function handleDrop(e) {
+    e.preventDefault();
+    document.getElementById('resumeDropZone').classList.remove('dragover');
+    const file = e.dataTransfer.files[0];
+    if (file) showResumeFile(file);
+  }
+
+  function submitResume() {
+    const name = document.getElementById('resumeFileName').textContent;
+    closeResumeUpload();
+    // Show a brief toast
+    const toast = document.createElement('div');
+    toast.textContent = '✓  ' + name + ' uploaded successfully';
+    Object.assign(toast.style, {
+      position:'fixed', bottom:'28px', left:'50%', transform:'translateX(-50%)',
+      background:'#16a34a', color:'#fff', padding:'12px 24px', borderRadius:'10px',
+      fontSize:'14px', fontWeight:'600', zIndex:'9999', boxShadow:'0 4px 16px rgba(0,0,0,.15)',
+      animation:'fadeUp 0.2s ease'
+    });
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 3000);
+  }
+</script>
+
+</body>
+</html>

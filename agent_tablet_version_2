@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Flexwork - Employer Agents</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        /* ===== TABLET LAYOUT (768px - 1024px optimized) ===== */
+        * { -webkit-tap-highlight-color: transparent; }
+
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+
+        /* Sidebar slide-over on tablet */
+        .sidebar-overlay {
+            position: fixed; inset: 0;
+            background: rgba(15, 23, 42, 0.45);
+            backdrop-filter: blur(2px);
+            z-index: 40;
+            opacity: 0; pointer-events: none;
+            transition: opacity 0.25s ease;
+        }
+        .sidebar-overlay.active { opacity: 1; pointer-events: auto; }
+
+        #sidebar {
+            position: fixed;
+            top: 0; left: 0; bottom: 0;
+            width: 240px;
+            background: white;
+            border-right: 1px solid #f1f5f9;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            z-index: 50;
+            transform: translateX(-100%);
+            transition: transform 0.28s cubic-bezier(0.4,0,0.2,1);
+            box-shadow: 4px 0 24px rgba(0,0,0,0.08);
+        }
+        #sidebar.open { transform: translateX(0); }
+
+        /* Main content always full width on tablet */
+        #mainContent {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        /* Header */
+        #topHeader {
+            height: 64px;
+            background: white;
+            border-bottom: 1px solid #f1f5f9;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            position: sticky;
+            top: 0;
+            z-index: 30;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+        }
+
+        /* Table scroll container */
+        .table-scroll-wrap {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: thin;
+            scrollbar-color: #c7d2fe #f1f5f9;
+        }
+        .table-scroll-wrap::-webkit-scrollbar { height: 6px; }
+        .table-scroll-wrap::-webkit-scrollbar-track { background: #f8fafc; border-radius: 3px; }
+        .table-scroll-wrap::-webkit-scrollbar-thumb { background: #c7d2fe; border-radius: 3px; }
+        .table-scroll-wrap::-webkit-scrollbar-thumb:hover { background: #a5b4fc; }
+
+        /* Drawer / modal */
+        #agentModal { z-index: 200; }
+        #modalContent { max-width: 420px; width: 100%; }
+
+        /* Nav active item */
+        .nav-active {
+            background: #FFB800;
+            color: #1e293b;
+            font-weight: 700;
+        }
+
+        /* Touch-friendly rows */
+        #agentTableBody tr { cursor: default; }
+        #agentTableBody tr:active { background: #f8fafc; }
+
+        /* Filter dropdown */
+        #filterDropdown { min-width: 260px; }
+
+        /* Pill badge */
+        .location-pill {
+            background: #f1f5f9;
+            color: #475569;
+            padding: 3px 10px;
+            border-radius: 9999px;
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        /* Smooth scroll on main */
+        #mainScroll { overflow-y: auto; flex: 1; }
+
+        /* Section card */
+        .section-card {
+            background: white;
+            border: 1px solid #f1f5f9;
+            border-radius: 16px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+            overflow: hidden;
+        }
+
+        /* Hamburger touch target */
+        #hamburgerBtn { width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 10px; }
+        #hamburgerBtn:hover { background: #f8fafc; }
+
+        /* Responsive search & actions row */
+        .toolbar-row {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        @media (min-width: 600px) {
+            .toolbar-row {
+                flex-direction: row;
+                align-items: center;
+            }
+        }
+
+        /* Action dropdown */
+        #actionDropdown { z-index: 9999; }
+
+        /* Logo placeholder if image missing */
+        .logo-fallback {
+            font-size: 20px;
+            font-weight: 900;
+            color: #3B41E3;
+            letter-spacing: -0.5px;
+        }
+    </style>
+</head>
+<body class="bg-[#F8FAFC] text-slate-800 min-h-screen overflow-x-hidden">
+
+    <!-- Sidebar Overlay -->
+    <div id="sidebarOverlay" class="sidebar-overlay"></div>
+
+    <!-- ===== SIDEBAR ===== -->
+    <aside id="sidebar">
+        <div>
+            <!-- Logo + Close -->
+            <div class="px-5 py-4 flex items-center justify-between border-b border-slate-50">
+                <img src="logo.png" alt="Flexwork Logo" class="h-9 w-auto object-contain"
+                     onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
+                <span class="logo-fallback" style="display:none">Flexwork</span>
+                <button id="sidebarCloseBtn" class="p-1.5 rounded-xl text-slate-400 hover:bg-slate-50 hover:text-slate-600 transition">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <!-- Nav -->
+            <nav class="px-3 py-3 space-y-1">
+                <a href="#" class="flex items-center gap-3 px-4 py-3 text-sm font-semibold text-slate-600 rounded-xl hover:bg-slate-50 transition">
+                    <i data-lucide="layout-grid" class="w-5 h-5 text-slate-400 shrink-0"></i>
+                    Dashboard
+                </a>
+
+                <a href="#" class="flex items-center gap-3 px-4 py-3 text-sm font-semibold text-slate-600 rounded-xl hover:bg-slate-50 transition">
+                    <svg class="w-5 h-5 text-slate-400 fill-current shrink-0" viewBox="0 0 16 16">
+                        <path d="M12.5 16a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7m.5-5v1h1a.5.5 0 0 1 0 1h-1v1a.5.5 0 0 1-1 0v-1h-1a.5.5 0 0 1 0-1h1v-1a.5.5 0 0 1 1 0m-2-6a3 3 0 1 1-6 0 3 3 0 0 1 6 0"/>
+                        <path d="M2 13c0 1 1 1 1 1h5.256A4.5 4.5 0 0 1 8 12.5a4.5 4.5 0 0 1 1.544-3.393Q8.844 9.002 8 9c-5 0-6 3-6 4"/>
+                    </svg>
+                    Agent
+                </a>
+
+                <!-- Our Services with submenu -->
+                <div>
+                    <button id="servicesMenuToggle" class="w-full flex items-center justify-between px-4 py-3 text-sm font-bold text-slate-900 bg-[#FFB800] rounded-xl shadow-sm transition">
+                        <span class="flex items-center gap-3">
+                            <svg class="w-5 h-5 text-slate-900 fill-current shrink-0" viewBox="0 0 16 16">
+                                <path d="M8.186 1.113a.5.5 0 0 0-.372 0L1.846 3.5l2.404.961L10.404 2zm3.564 1.426L5.596 5 8 5.961 14.154 3.5zm3.25 1.7-6.5 2.6v7.922l6.5-2.6V4.24zM7.5 14.748V6.836L1 4.24v7.922zm.362-13.048a1.5 1.5 0 0 1 .114 0z"/>
+                            </svg>
+                            Our Services
+                        </span>
+                        <i data-lucide="chevron-down" id="servicesChevron" class="w-4 h-4 text-slate-900 transition-transform duration-200"></i>
+                    </button>
+                    <div id="servicesSubmenu" class="pl-6 pr-2 py-1 space-y-1 relative before:absolute before:left-4 before:top-0 before:bottom-0 before:w-0.5 before:bg-slate-100 hidden">
+                        <a href="#" class="flex items-center gap-3 px-4 py-2 text-xs font-bold text-[#3B41E3] bg-[#EEF2FF] rounded-lg relative">
+                            <span class="absolute -left-[11px] w-2 h-2 rounded-full bg-[#3B41E3]"></span>
+                            Interview Panel
+                        </a>
+                        <a href="#" class="flex items-center gap-3 px-4 py-2 text-xs font-medium text-slate-500 rounded-lg hover:bg-slate-50 hover:text-slate-800 transition">
+                            <span class="w-1.5 h-1.5 rounded-full border border-slate-300 bg-white -ml-[10px]"></span>
+                            Consultant
+                        </a>
+                        <a href="#" class="flex items-center gap-3 px-4 py-2 text-xs font-medium text-slate-500 rounded-lg hover:bg-slate-50 hover:text-slate-800 transition">
+                            <span class="w-1.5 h-1.5 rounded-full border border-slate-300 bg-white -ml-[10px]"></span>
+                            Trainer
+                        </a>
+                    </div>
+                </div>
+
+                <a href="#" class="flex items-center gap-3 px-4 py-3 text-sm font-semibold text-slate-600 rounded-xl hover:bg-slate-50 transition">
+                    <svg class="w-5 h-5 text-slate-400 fill-current shrink-0" viewBox="0 0 16 16">
+                        <path d="M3 4.5a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9a.5.5 0 0 1-.5-.5m0 2a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9a.5.5 0 0 1-.5-.5m0 2a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9a.5.5 0 0 1-.5-.5m0 2a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9a.5.5 0 0 1-.5-.5m0 2a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5"/>
+                        <path d="M2 1a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v14a1 1 0 0 1-1.6.8l-1.4-1.05-1.4 1.05a1 1 0 0 1-1.2 0L8 14.25l-1.4 1.05a1 1 0 0 1-1.2 0L4 14.25l-1.4 1.05A1 1 0 0 1 2 14.4zm1 0v12.62l1.6-.4a1 1 0 0 1 1.2 0l1.4 1.05 1.4-1.05a1 1 0 0 1 1.2 0l1.4 1.05 1.4-1.05a1 1 0 0 1 .6.4V1z"/>
+                    </svg>
+                    Invoices
+                </a>
+
+                <a href="#" class="flex items-center gap-3 px-4 py-3 text-sm font-semibold text-slate-600 rounded-xl hover:bg-slate-50 transition">
+                    <i data-lucide="mail" class="w-5 h-5 text-slate-400 shrink-0"></i>
+                    Payments
+                </a>
+            </nav>
+        </div>
+
+        <!-- User avatar block -->
+        <div class="p-4 border-t border-slate-50">
+            <div class="w-full h-28 bg-gradient-to-tr from-indigo-50 to-purple-50 rounded-2xl flex items-center justify-center border border-slate-100 overflow-hidden relative shadow-sm">
+                <div class="absolute -bottom-2 -left-2 w-12 h-12 bg-[#6366F1]/10 rounded-full blur-sm"></div>
+                <div class="absolute -top-4 -right-4 w-16 h-16 bg-[#FFB800]/10 rounded-full blur-sm"></div>
+                <div class="w-14 h-14 rounded-full bg-white shadow-md border border-slate-100 flex items-center justify-center relative z-10">
+                    <div class="w-full h-full rounded-full bg-indigo-100 flex items-center justify-center text-[#6366F1]">
+                        <i data-lucide="user" class="w-7 h-7"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- ===== MAIN CONTENT ===== -->
+    <div id="mainContent">
+
+        <!-- TOP HEADER -->
+        <header id="topHeader">
+            <!-- Left: Hamburger + Logo -->
+            <div class="flex items-center gap-3">
+                <button id="hamburgerBtn" class="text-slate-500 hover:text-slate-700 transition">
+                    <i data-lucide="menu" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <!-- Right: icons + profile -->
+            <div class="flex items-center gap-3">
+                <button class="text-indigo-500 hover:text-indigo-600 p-2 rounded-lg hover:bg-indigo-50/50 transition">
+                    <i data-lucide="mail" class="w-5 h-5"></i>
+                </button>
+                <button class="relative text-indigo-500 hover:text-indigo-600 p-2 rounded-lg hover:bg-indigo-50/50 transition">
+                    <i data-lucide="bell" class="w-5 h-5"></i>
+                    <span class="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-red-500 border border-white"></span>
+                </button>
+                <div class="flex items-center gap-2 border-l border-slate-100 pl-3 cursor-pointer group">
+                    <div class="text-right hidden" id="profileTextBlock">
+                        <p class="text-sm font-bold text-[#3B41E3]">Hello Christena</p>
+                        <p class="text-[10px] font-bold text-slate-400 tracking-wider">FW-EMPR22</p>
+                    </div>
+                    <!-- Show on wider tablets -->
+                    <div class="text-right" id="profileTextBlockMd">
+                        <p class="text-xs font-bold text-[#3B41E3]">Hello Christena</p>
+                        <p class="text-[10px] font-bold text-slate-400 tracking-wider">FW-EMPR22</p>
+                    </div>
+                    <button class="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center border border-slate-200 text-slate-600">
+                        <i data-lucide="chevron-down" class="w-4 h-4"></i>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- PAGE BODY -->
+        <main id="mainScroll" class="p-4 space-y-4">
+
+            <!-- Page title + toolbar -->
+            <div>
+                <h1 class="text-xl font-bold text-slate-900 tracking-tight mb-3">Employer Agents</h1>
+
+                <div class="toolbar-row">
+                    <!-- Search -->
+                    <div class="relative flex-1">
+                        <i data-lucide="search" class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400"></i>
+                        <input type="text" placeholder="Search Employer Agents"
+                               class="w-full pl-10 pr-4 h-11 text-sm bg-white border border-slate-200 rounded-xl focus:outline-none focus:border-indigo-500 transition shadow-sm placeholder:text-slate-400">
+                    </div>
+
+                    <!-- Filter + Add -->
+                    <div class="flex items-center gap-2 shrink-0">
+                        <!-- Filter -->
+                        <div class="relative">
+                            <button id="filterBtn" class="bg-white border border-slate-200 rounded-xl px-4 h-11 flex items-center gap-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 shadow-sm transition">
+                                Filter <i data-lucide="sliders-horizontal" class="w-4 h-4 text-slate-400"></i>
+                            </button>
+                            <div id="filterDropdown" class="hidden absolute top-13 right-0 w-72 bg-white border border-slate-100 rounded-xl shadow-xl p-5 z-40 flex-col gap-4">
+                                <div class="flex flex-col gap-1">
+                                    <label class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">City Location</label>
+                                    <select id="filterLocation" class="h-9 border border-slate-200 rounded-lg px-2.5 text-xs bg-transparent outline-none text-slate-700 focus:border-indigo-500 transition">
+                                        <option value="">All Regions</option>
+                                        <option value="Chennai">Chennai</option>
+                                        <option value="Delhi">Delhi</option>
+                                        <option value="Mumbai">Mumbai</option>
+                                    </select>
+                                </div>
+                                <div class="flex flex-col gap-1">
+                                    <label class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Account Status</label>
+                                    <select id="filterStatus" class="h-9 border border-slate-200 rounded-lg px-2.5 text-xs bg-transparent outline-none text-slate-700 focus:border-indigo-500 transition">
+                                        <option value="">All Statuses</option>
+                                        <option value="Active">Active Agent</option>
+                                        <option value="Pending">Pending Review</option>
+                                        <option value="Suspended">Suspended</option>
+                                    </select>
+                                </div>
+                                <div class="flex flex-col gap-1">
+                                    <label class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Joining Period</label>
+                                    <div class="grid grid-cols-2 gap-2">
+                                        <input type="date" id="filterStartDate" class="h-9 border border-slate-200 rounded-lg px-2 text-xs text-slate-600 outline-none focus:border-indigo-500 transition">
+                                        <input type="date" id="filterEndDate" class="h-9 border border-slate-200 rounded-lg px-2 text-xs text-slate-600 outline-none focus:border-indigo-500 transition">
+                                    </div>
+                                </div>
+                                <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+                                    <button id="filterResetBtn" class="text-xs font-bold text-slate-400 hover:text-slate-600 px-2 py-1 transition">Reset</button>
+                                    <button id="filterApplyBtn" class="bg-[#6366F1] text-white text-xs font-bold px-3 py-1.5 rounded-lg hover:bg-indigo-600 transition shadow-sm">Apply Filters</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Add button -->
+                        <div class="inline-flex shadow-sm rounded-xl overflow-hidden">
+                            <button id="addAgentBtn" class="bg-[#6366F1] hover:bg-indigo-600 text-white text-sm font-semibold px-5 h-11 transition active:scale-[0.98]">
+                                Add
+                            </button>
+                            <button class="bg-[#6366F1] hover:bg-indigo-600 text-white px-2.5 h-11 border-l border-indigo-400/30 transition">
+                                <i data-lucide="chevron-down" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TABLE CARD -->
+            <div class="section-card">
+                <!-- Scrollable table -->
+                <div class="table-scroll-wrap">
+                    <table class="w-full text-left border-collapse" style="min-width: 680px;">
+                        <thead>
+                            <tr class="bg-[#6366F1] text-white select-none">
+                                <th class="py-3.5 px-5 text-xs font-semibold tracking-wide whitespace-nowrap">User Id</th>
+                                <th class="py-3.5 px-5 text-xs font-semibold tracking-wide whitespace-nowrap">Firstname</th>
+                                <th class="py-3.5 px-5 text-xs font-semibold tracking-wide whitespace-nowrap">Lastname</th>
+                                <th class="py-3.5 px-5 text-xs font-semibold tracking-wide whitespace-nowrap">Email</th>
+                                <th class="py-3.5 px-5 text-xs font-semibold tracking-wide whitespace-nowrap">Mobile</th>
+                                <th class="py-3.5 px-5 text-xs font-semibold tracking-wide whitespace-nowrap">Location</th>
+                                <th class="py-3.5 px-5 text-xs font-semibold tracking-wide text-center whitespace-nowrap">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="agentTableBody" class="divide-y divide-slate-100 text-[13px] text-slate-700 font-medium">
+                            <tr class="hover:bg-slate-50/60 transition">
+                                <td class="cell-id py-3.5 px-5 text-slate-400 font-bold">3083</td>
+                                <td class="cell-firstname py-3.5 px-5 text-slate-900 font-semibold whitespace-nowrap">Mary</td>
+                                <td class="cell-lastname py-3.5 px-5 whitespace-nowrap">Thersita</td>
+                                <td class="cell-email py-3.5 px-5 text-slate-600 whitespace-nowrap">Mary.t@flexxwork.in</td>
+                                <td class="cell-mobile py-3.5 px-5 text-slate-600 tracking-wide whitespace-nowrap">+91 85784 56231</td>
+                                <td class="cell-location py-3.5 px-5 whitespace-nowrap">
+                                    <span class="location-pill">Chennai</span>
+                                </td>
+                                <td class="py-3.5 px-5 text-center">
+                                    <button class="action-menu-btn p-2 inline-flex text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition">
+                                        <i data-lucide="more-vertical" class="w-4 h-4"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr class="hover:bg-slate-50/60 transition">
+                                <td class="cell-id py-3.5 px-5 text-slate-400 font-bold">3084</td>
+                                <td class="cell-firstname py-3.5 px-5 text-slate-900 font-semibold whitespace-nowrap">Rahul</td>
+                                <td class="cell-lastname py-3.5 px-5 whitespace-nowrap">Sharma</td>
+                                <td class="cell-email py-3.5 px-5 text-slate-600 whitespace-nowrap">rahul.s@flexxwork.in</td>
+                                <td class="cell-mobile py-3.5 px-5 text-slate-600 tracking-wide whitespace-nowrap">+91 91234 56789</td>
+                                <td class="cell-location py-3.5 px-5 whitespace-nowrap">
+                                    <span class="location-pill">Delhi</span>
+                                </td>
+                                <td class="py-3.5 px-5 text-center">
+                                    <button class="action-menu-btn p-2 inline-flex text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition">
+                                        <i data-lucide="more-vertical" class="w-4 h-4"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr class="hover:bg-slate-50/60 transition">
+                                <td class="cell-id py-3.5 px-5 text-slate-400 font-bold">3085</td>
+                                <td class="cell-firstname py-3.5 px-5 text-slate-900 font-semibold whitespace-nowrap">Priya</td>
+                                <td class="cell-lastname py-3.5 px-5 whitespace-nowrap">Nair</td>
+                                <td class="cell-email py-3.5 px-5 text-slate-600 whitespace-nowrap">priya.n@flexxwork.in</td>
+                                <td class="cell-mobile py-3.5 px-5 text-slate-600 tracking-wide whitespace-nowrap">+91 98765 43210</td>
+                                <td class="cell-location py-3.5 px-5 whitespace-nowrap">
+                                    <span class="location-pill">Mumbai</span>
+                                </td>
+                                <td class="py-3.5 px-5 text-center">
+                                    <button class="action-menu-btn p-2 inline-flex text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition">
+                                        <i data-lucide="more-vertical" class="w-4 h-4"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination -->
+                <div class="px-5 py-4 border-t border-slate-100 bg-white flex flex-col sm:flex-row items-center justify-between gap-3">
+                    <div class="text-xs font-semibold text-slate-500">
+                        Showing 1 to 3 of 3 entries
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <div class="flex items-center gap-1">
+                            <button class="w-8 h-8 rounded-lg border border-slate-200 flex items-center justify-center text-slate-300 cursor-not-allowed" disabled>
+                                <i data-lucide="chevron-left" class="w-4 h-4"></i>
+                            </button>
+                            <button class="w-8 h-8 rounded-lg bg-[#6366F1] flex items-center justify-center text-white text-xs font-bold shadow-sm">1</button>
+                            <button class="w-8 h-8 rounded-lg border border-slate-200 flex items-center justify-center text-slate-300 cursor-not-allowed" disabled>
+                                <i data-lucide="chevron-right" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                        <div class="flex items-center bg-white border border-slate-200 rounded-xl px-3 h-8 shadow-sm cursor-pointer text-xs font-semibold text-slate-600 gap-2">
+                            <span>10 / page</span>
+                            <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-slate-400"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- ===== ACTION DROPDOWN ===== -->
+    <div id="actionDropdown" class="hidden fixed bg-white border border-slate-100 rounded-xl shadow-xl min-w-[130px] overflow-hidden flex-col divide-y divide-slate-50 py-1">
+        <button id="openEditModalBtn" class="w-full text-left px-4 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-2 transition">
+            <i data-lucide="edit-2" class="w-3.5 h-3.5 text-slate-400"></i> Edit
+        </button>
+        <button class="w-full text-left px-4 py-2.5 text-xs font-bold text-rose-600 hover:bg-rose-50 flex items-center gap-2 transition">
+            <i data-lucide="trash-2" class="w-3.5 h-3.5 text-rose-400"></i> Delete
+        </button>
+    </div>
+
+    <!-- ===== SLIDE-IN DRAWER MODAL ===== -->
+    <div id="agentModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm hidden items-center justify-end opacity-0 transition-opacity duration-300">
+        <div id="modalContent" class="bg-white w-full max-w-md h-full shadow-2xl flex flex-col translate-x-full transition-transform duration-300 ease-out">
+            <div class="p-5 border-b border-slate-100 flex items-center justify-between">
+                <h2 id="modalTitle" class="text-base font-bold text-slate-900">Create Agent</h2>
+                <button id="closeModalBtn" class="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:bg-slate-50 hover:text-slate-600 transition">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+            <div class="p-5 flex-1 overflow-y-auto space-y-4">
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="flex flex-col gap-1.5">
+                        <label class="text-xs font-bold text-slate-600">First Name <span class="text-rose-500">*</span></label>
+                        <input type="text" id="formFirstName" class="h-10 border border-slate-200 rounded-xl px-3.5 text-xs outline-none focus:border-[#6366F1] focus:ring-2 focus:ring-indigo-100 transition" />
+                    </div>
+                    <div class="flex flex-col gap-1.5">
+                        <label class="text-xs font-bold text-slate-600">Last Name <span class="text-rose-500">*</span></label>
+                        <input type="text" id="formLastName" class="h-10 border border-slate-200 rounded-xl px-3.5 text-xs outline-none focus:border-[#6366F1] focus:ring-2 focus:ring-indigo-100 transition" />
+                    </div>
+                </div>
+                <div class="flex flex-col gap-1.5">
+                    <label class="text-xs font-bold text-slate-600">Email Address <span class="text-rose-500">*</span></label>
+                    <input type="email" id="formEmail" class="h-10 border border-slate-200 rounded-xl px-3.5 text-xs outline-none focus:border-[#6366F1] focus:ring-2 focus:ring-indigo-100 transition" />
+                </div>
+                <div class="flex flex-col gap-1.5">
+                    <label class="text-xs font-bold text-slate-600">Contact Number <span class="text-rose-500">*</span></label>
+                    <div class="flex border border-slate-200 rounded-xl overflow-hidden focus-within:border-[#6366F1] focus-within:ring-2 focus-within:ring-indigo-100 transition">
+                        <span class="bg-slate-50 border-r border-slate-200 px-3 flex items-center text-xs font-semibold text-slate-500 select-none">+91</span>
+                        <input type="tel" id="formPhone" class="h-10 px-3 text-xs outline-none w-full" />
+                    </div>
+                </div>
+                <div class="flex flex-col gap-1.5">
+                    <label class="text-xs font-bold text-slate-600">City / Location <span class="text-rose-500">*</span></label>
+                    <input type="text" id="formCity" class="h-10 border border-slate-200 rounded-xl px-3.5 text-xs outline-none focus:border-[#6366F1] focus:ring-2 focus:ring-indigo-100 transition" />
+                </div>
+            </div>
+            <div class="p-4 px-5 border-t border-slate-100 bg-slate-50 flex justify-end gap-2.5">
+                <button id="cancelModalBtn" class="px-4 h-10 border border-slate-200 bg-white rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-50 transition">Cancel</button>
+                <button id="saveModalBtn" class="px-5 h-10 bg-[#6366F1] text-white rounded-xl text-xs font-bold shadow-md hover:bg-indigo-600 transition">Save Data</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        lucide.createIcons();
+
+        /* ===== SIDEBAR ===== */
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('sidebarOverlay');
+        const hamburgerBtn = document.getElementById('hamburgerBtn');
+        const sidebarCloseBtn = document.getElementById('sidebarCloseBtn');
+
+        function openSidebar() {
+            sidebar.classList.add('open');
+            overlay.classList.add('active');
+        }
+        function closeSidebar() {
+            sidebar.classList.remove('open');
+            overlay.classList.remove('active');
+        }
+
+        hamburgerBtn.addEventListener('click', openSidebar);
+        sidebarCloseBtn.addEventListener('click', closeSidebar);
+        overlay.addEventListener('click', closeSidebar);
+
+        /* ===== SERVICES SUBMENU ===== */
+        const servicesMenuToggle = document.getElementById('servicesMenuToggle');
+        const servicesSubmenu = document.getElementById('servicesSubmenu');
+        const servicesChevron = document.getElementById('servicesChevron');
+
+        servicesMenuToggle.addEventListener('click', () => {
+            const hidden = servicesSubmenu.classList.contains('hidden');
+            servicesSubmenu.classList.toggle('hidden', !hidden);
+            servicesChevron.classList.toggle('rotate-180', hidden);
+        });
+
+        /* ===== FILTER DROPDOWN ===== */
+        const filterBtn = document.getElementById('filterBtn');
+        const filterDropdown = document.getElementById('filterDropdown');
+        const filterResetBtn = document.getElementById('filterResetBtn');
+        const filterApplyBtn = document.getElementById('filterApplyBtn');
+
+        function dismissFilter() {
+            filterDropdown.classList.add('hidden');
+            filterDropdown.classList.remove('flex');
+            filterBtn.classList.remove('border-[#6366F1]', 'text-[#6366F1]');
+        }
+
+        filterBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const isHidden = filterDropdown.classList.contains('hidden');
+            if (isHidden) {
+                filterDropdown.classList.remove('hidden');
+                filterDropdown.classList.add('flex');
+                filterDropdown.style.flexDirection = 'column';
+                filterBtn.classList.add('border-[#6366F1]', 'text-[#6366F1]');
+            } else {
+                dismissFilter();
+            }
+        });
+
+        filterResetBtn.addEventListener('click', () => {
+            document.getElementById('filterLocation').value = '';
+            document.getElementById('filterStatus').value = '';
+            document.getElementById('filterStartDate').value = '';
+            document.getElementById('filterEndDate').value = '';
+            dismissFilter();
+        });
+        filterApplyBtn.addEventListener('click', dismissFilter);
+
+        /* ===== ACTION DROPDOWN ===== */
+        const agentTableBody = document.getElementById('agentTableBody');
+        const actionDropdown = document.getElementById('actionDropdown');
+        const openEditModalBtn = document.getElementById('openEditModalBtn');
+        let currentActionBtn = null;
+        let currentRow = null;
+
+        agentTableBody.addEventListener('click', (e) => {
+            const btn = e.target.closest('.action-menu-btn');
+            if (!btn) return;
+            e.stopPropagation();
+            currentActionBtn = btn;
+            currentRow = btn.closest('tr');
+            const rect = btn.getBoundingClientRect();
+            actionDropdown.style.top = `${rect.bottom + window.scrollY + 4}px`;
+            actionDropdown.style.left = `${Math.max(8, rect.left + window.scrollX - 90)}px`;
+            actionDropdown.classList.remove('hidden');
+            actionDropdown.style.display = 'flex';
+            actionDropdown.style.flexDirection = 'column';
+        });
+
+        document.querySelector('.table-scroll-wrap').addEventListener('scroll', () => {
+            actionDropdown.classList.add('hidden');
+        });
+
+        document.addEventListener('click', (e) => {
+            if (currentActionBtn && !currentActionBtn.contains(e.target) && !actionDropdown.contains(e.target)) {
+                actionDropdown.classList.add('hidden');
+            }
+            if (!filterBtn.contains(e.target) && !filterDropdown.contains(e.target)) {
+                dismissFilter();
+            }
+        });
+
+        /* ===== DRAWER MODAL ===== */
+        const agentModal = document.getElementById('agentModal');
+        const modalContent = document.getElementById('modalContent');
+        const addAgentBtn = document.getElementById('addAgentBtn');
+        const closeModalBtn = document.getElementById('closeModalBtn');
+        const cancelModalBtn = document.getElementById('cancelModalBtn');
+        const saveModalBtn = document.getElementById('saveModalBtn');
+        const modalTitle = document.getElementById('modalTitle');
+        const formFirstName = document.getElementById('formFirstName');
+        const formLastName = document.getElementById('formLastName');
+        const formEmail = document.getElementById('formEmail');
+        const formPhone = document.getElementById('formPhone');
+        const formCity = document.getElementById('formCity');
+        let modalMode = 'create';
+
+        function showDrawer() {
+            agentModal.classList.remove('hidden');
+            agentModal.style.display = 'flex';
+            setTimeout(() => {
+                agentModal.classList.remove('opacity-0');
+                modalContent.classList.remove('translate-x-full');
+            }, 15);
+        }
+
+        function hideDrawer() {
+            agentModal.classList.add('opacity-0');
+            modalContent.classList.add('translate-x-full');
+            setTimeout(() => {
+                agentModal.style.display = 'none';
+                agentModal.classList.add('hidden');
+            }, 300);
+        }
+
+        addAgentBtn.addEventListener('click', () => {
+            modalMode = 'create';
+            modalTitle.innerText = 'Create Agent';
+            saveModalBtn.innerText = 'Save Data';
+            formFirstName.value = ''; formLastName.value = ''; formEmail.value = ''; formPhone.value = ''; formCity.value = '';
+            currentRow = null;
+            showDrawer();
+        });
+
+        openEditModalBtn.addEventListener('click', () => {
+            if (!currentRow) return;
+            modalMode = 'edit';
+            actionDropdown.classList.add('hidden');
+            modalTitle.innerText = 'Edit Agent Overview';
+            saveModalBtn.innerText = 'Save Changes';
+            formFirstName.value = currentRow.querySelector('.cell-firstname').innerText.trim();
+            formLastName.value = currentRow.querySelector('.cell-lastname').innerText.trim();
+            formEmail.value = currentRow.querySelector('.cell-email').innerText.trim();
+            formCity.value = currentRow.querySelector('.cell-location').innerText.trim();
+            formPhone.value = currentRow.querySelector('.cell-mobile').innerText.replace('+91', '').trim();
+            showDrawer();
+        });
+
+        saveModalBtn.addEventListener('click', () => {
+            if (modalMode === 'edit' && currentRow) {
+                currentRow.querySelector('.cell-firstname').innerText = formFirstName.value;
+                currentRow.querySelector('.cell-lastname').innerText = formLastName.value;
+                currentRow.querySelector('.cell-email').innerText = formEmail.value;
+                currentRow.querySelector('.cell-mobile').innerText = `+91 ${formPhone.value.trim()}`;
+                currentRow.querySelector('.cell-location').innerHTML = `<span class="location-pill">${formCity.value}</span>`;
+            }
+            hideDrawer();
+        });
+
+        closeModalBtn.addEventListener('click', hideDrawer);
+        cancelModalBtn.addEventListener('click', hideDrawer);
+    </script>
+</body>
+</html>

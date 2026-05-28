@@ -1,0 +1,1157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flexwork - Interview Panel</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        .sidebar-transition { transition: width 300ms cubic-bezier(0.4,0,0.2,1); }
+        .dropdown-transition { transition: max-height 250ms cubic-bezier(0.4,0,0.2,1), opacity 200ms ease, padding 250ms ease; }
+        .sidebar-collapsed .hide-on-collapse { display: none !important; }
+
+        @keyframes modalIn {
+            from { opacity:0; transform: translateY(20px) scale(0.97); }
+            to   { opacity:1; transform: translateY(0) scale(1); }
+        }
+        .modal-card { animation: modalIn 0.22s cubic-bezier(0.4,0,0.2,1) both; }
+
+        .skill-tag { display:inline-flex; align-items:center; gap:4px; padding:3px 10px; border-radius:6px; font-size:11px; font-weight:700; letter-spacing:0.02em; }
+        .skill-primary   { background:#EEF2FF; color:#3B41E3; }
+        .skill-secondary { background:#F1F5F9; color:#475569; }
+
+        .chat-bubble-agent { background:#EEF2FF; border-radius:4px 16px 16px 16px; }
+        .chat-bubble-user  { background:#6366F1; color:white; border-radius:16px 4px 16px 16px; }
+
+        .modal-scroll::-webkit-scrollbar { width:4px; }
+        .modal-scroll::-webkit-scrollbar-track { background:transparent; }
+        .modal-scroll::-webkit-scrollbar-thumb { background:#e2e8f0; border-radius:4px; }
+
+        /* Rich text editor toolbar */
+        .rte-toolbar { display:flex; flex-wrap:wrap; gap:2px; padding:8px 10px; background:#f8fafc; border-bottom:1px solid #e2e8f0; }
+        .rte-btn { padding:4px 7px; border-radius:5px; font-size:12px; font-weight:600; color:#475569; cursor:pointer; border:none; background:transparent; transition:background 0.15s; }
+        .rte-btn:hover { background:#e2e8f0; }
+        .rte-btn.active { background:#e2e8f0; }
+        .rte-divider { width:1px; background:#e2e8f0; margin:2px 4px; align-self:stretch; }
+        .rte-select { font-size:12px; border:none; background:transparent; color:#475569; outline:none; cursor:pointer; padding:2px 4px; border-radius:4px; }
+        .rte-select:hover { background:#e2e8f0; }
+        .rte-area { min-height:100px; padding:10px 12px; font-size:13px; outline:none; color:#1e293b; line-height:1.6; }
+
+        /* Form field label */
+        .field-label { font-size:12px; font-weight:600; color:#64748b; margin-bottom:5px; display:block; }
+        .field-label .req { color:#ef4444; margin-left:2px; }
+        .field-info { display:inline-flex; align-items:center; justify-content:center; width:14px; height:14px; border-radius:50%; background:#e2e8f0; color:#64748b; font-size:9px; margin-left:4px; cursor:help; }
+
+        /* Form input */
+        .fw-input { width:100%; padding:9px 12px; border:1px solid #e2e8f0; border-radius:10px; font-size:13px; color:#1e293b; outline:none; transition:border-color 0.15s, box-shadow 0.15s; background:white; }
+        .fw-input:focus { border-color:#6366F1; box-shadow:0 0 0 3px rgba(99,102,241,0.1); }
+        .fw-select { appearance:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2.5'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 10px center; padding-right:28px; }
+
+        /* Section heading in edit form */
+        .form-section-title { font-size:15px; font-weight:800; color:#1e293b; padding-bottom:14px; border-bottom:2px solid #f1f5f9; margin-bottom:18px; display:flex; align-items:center; gap:8px; }
+        .form-section-title .dot { width:8px; height:8px; border-radius:50%; background:#6366F1; }
+
+        /* Skill chip in edit form */
+        .edit-skill-chip { display:inline-flex; align-items:center; gap:5px; padding:4px 10px; border-radius:20px; border:1.5px solid #e2e8f0; font-size:12px; font-weight:600; color:#475569; background:white; }
+        .edit-skill-chip .remove-chip { width:14px; height:14px; border-radius:50%; background:#e2e8f0; display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:9px; color:#64748b; flex-shrink:0; }
+        .edit-skill-chip .remove-chip:hover { background:#fecaca; color:#ef4444; }
+
+        /* ── TABLE: prevent wrapping, force scroll ── */
+        .overflow-x-auto { overflow-x: auto !important; -webkit-overflow-scrolling: touch; }
+        table { min-width: 800px; width: 100%; }
+        table td, table th { white-space: nowrap; }
+        /* Keep title/role cells from being too wide */
+        table td:first-child { max-width: 220px; }
+        table td:first-child .font-bold { overflow: hidden; text-overflow: ellipsis; }
+
+        /* Skills input wrapper */
+        .skills-input-wrapper { border:1px solid #e2e8f0; border-radius:10px; padding:8px 12px; display:flex; flex-wrap:wrap; gap:6px; align-items:center; background:white; transition:border-color 0.15s; }
+        .skills-input-wrapper:focus-within { border-color:#6366F1; box-shadow:0 0 0 3px rgba(99,102,241,0.1); }
+        .skills-input-wrapper input { border:none; outline:none; font-size:12px; color:#475569; flex:1; min-width:120px; background:transparent; }
+        .skills-input-wrapper input::placeholder { color:#94a3b8; }
+    /* ═══════════════════════════════════════════
+   TABLET RESPONSIVE STYLES (768px – 1024px)
+   ═══════════════════════════════════════════ */
+
+/* ── Sidebar: auto-collapse on tablet ── */
+@media (min-width: 768px) and (max-width: 1024px) {
+    /* Sidebar collapses to icon-only by default on tablet */
+    #sidebar {
+        width: 72px !important;
+    }
+    #sidebar .hide-on-collapse {
+        display: none !important;
+    }
+    #sidebar nav a,
+    #sidebar nav button {
+        justify-content: center;
+        padding-left: 0;
+        padding-right: 0;
+    }
+    #sidebar nav a span,
+    #sidebar nav button span.hide-on-collapse {
+        display: none !important;
+    }
+    #sidebar #services-menu {
+        max-height: 0;
+        opacity: 0;
+        padding: 0;
+        overflow: hidden;
+    }
+    /* Hide submenu items text when sidebar is collapsed on tablet */
+    #sidebar:not(.tablet-expanded) #services-menu {
+        display: none;
+    }
+    /* When expanded, let JS control the menu height */
+    #sidebar.tablet-expanded #services-menu {
+        display: block;
+        overflow: hidden;
+    }
+    /* Logo area: shrink to just the toggle button */
+    #sidebar .p-6 {
+        padding: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 80px;
+    }
+    /* When expanded via JS on tablet */
+    #sidebar.tablet-expanded {
+        width: 240px !important;
+    }
+    #sidebar.tablet-expanded .hide-on-collapse {
+        display: inline !important;
+    }
+    #sidebar.tablet-expanded nav a,
+    #sidebar.tablet-expanded nav button {
+        justify-content: flex-start;
+        padding-left: 16px;
+        padding-right: 16px;
+    }
+    #sidebar.tablet-expanded .p-6 {
+        padding: 24px;
+        justify-content: space-between;
+    }
+    /* Main area fills properly */
+    .flex-1.flex.flex-col.min-w-0 {
+        min-width: 0;
+        overflow-x: hidden;
+    }
+    /* Header: tighten padding */
+    header.h-20 {
+        padding-left: 20px !important;
+        padding-right: 20px !important;
+    }
+    /* Main content: tighter padding */
+    main.flex-1 {
+        padding: 20px !important;
+    }
+    /* Page title row: keep on one line */
+    .flex.flex-col.lg\\:flex-row {
+        flex-direction: row !important;
+        align-items: center !important;
+        gap: 12px !important;
+    }
+    /* Tab bar: make it scrollable if needed */
+    .flex.items-center.gap-2.bg-white.p-1\\.5.rounded-xl {
+        overflow-x: auto;
+        white-space: nowrap;
+        max-width: 100%;
+        scrollbar-width: none;
+    }
+    .flex.items-center.gap-2.bg-white.p-1\\.5.rounded-xl::-webkit-scrollbar {
+        display: none;
+    }
+    /* Stats grid: 2 columns on tablet */
+    .grid.grid-cols-1.sm\\:grid-cols-2.lg\\:grid-cols-4 {
+        grid-template-columns: repeat(2, 1fr) !important;
+    }
+    /* Table: horizontal scroll on tablet */
+    .overflow-x-auto {
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch;
+    }
+    /* Table minimum widths so content doesn't crunch */
+    table {
+        min-width: 800px;
+    }
+    /* Filters row */
+    .flex.flex-col.sm\\:flex-row.items-center.justify-between.gap-4.mb-4 {
+        flex-direction: row !important;
+        align-items: center !important;
+    }
+    /* Modal: full-width on tablet with padding */
+    .modal-card {
+        max-width: calc(100vw - 32px) !important;
+        width: 100% !important;
+    }
+    /* Edit modal wider */
+    #editModal .modal-card {
+        max-width: calc(100vw - 32px) !important;
+    }
+    /* Edit form grids: sm breakpoint already handles 2-col, keep as is */
+    /* Reduce modal padding for tablet */
+    #viewModal .modal-card > div.px-8,
+    #editModal .modal-card > div.px-8 {
+        padding-left: 20px !important;
+        padding-right: 20px !important;
+    }
+    #viewModal .modal-card > div.flex.justify-between,
+    #editModal .modal-card > div.flex.justify-between {
+        padding-left: 20px !important;
+        padding-right: 20px !important;
+    }
+    /* Edit form 4-col pricing grid: 2 cols on tablet */
+    .grid.grid-cols-1.sm\\:grid-cols-4 {
+        grid-template-columns: repeat(2, 1fr) !important;
+    }
+    /* Edit form 3-col grid: 2 cols on tablet */
+    .grid.grid-cols-1.sm\\:grid-cols-3 {
+        grid-template-columns: repeat(2, 1fr) !important;
+    }
+    /* Recruiter image: slightly smaller */
+    .w-10.h-10.rounded-full {
+        width: 36px !important;
+        height: 36px !important;
+    }
+    /* Touch targets: ensure min 44px height for all buttons */
+    button, a, input, select {
+        min-height: 36px;
+    }
+    /* Improve font size for readability */
+    body {
+        font-size: 14px;
+    }
+    /* View modal meta tags: wrap better */
+    #v-title + .flex.flex-wrap {
+        gap: 6px !important;
+    }
+    /* RTE toolbar: allow wrap (already does, just ensure it) */
+    .rte-toolbar {
+        flex-wrap: wrap;
+    }
+}
+
+/* ── Portrait tablet (768px) adjustments ── */
+@media (min-width: 768px) and (max-width: 860px) {
+    /* Stack stat cards 2×2 already handled above */
+    /* Make tab buttons a bit smaller */
+    .flex.items-center.gap-2.bg-white button {
+        padding: 8px 10px !important;
+        font-size: 11px !important;
+    }
+    /* Table cells: tighten */
+    table td, table th {
+        padding-top: 10px !important;
+        padding-bottom: 10px !important;
+        padding-left: 12px !important;
+        padding-right: 12px !important;
+    }
+    /* Stats card: slightly smaller padding */
+    .bg-white.p-6.rounded-2xl {
+        padding: 16px !important;
+    }
+    /* Stats number: slightly smaller */
+    .text-3xl.font-bold.text-slate-900 {
+        font-size: 1.6rem !important;
+    }
+}
+
+/* ── Overlay sidebar backdrop for tablet ── */
+#sidebar-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.3);
+    z-index: 40;
+}
+@media (min-width: 768px) and (max-width: 1024px) {
+    #sidebar-overlay.active {
+        display: block;
+    }
+    aside#sidebar {
+        position: fixed !important;
+        top: 0;
+        left: 0;
+        z-index: 50;
+        height: 100vh;
+        transition: width 300ms cubic-bezier(0.4,0,0.2,1) !important;
+    }
+    .flex-1.flex.flex-col.min-w-0 {
+        margin-left: 72px;
+        width: calc(100% - 72px);
+    }
+}
+
+    </style>
+</head>
+<body class="bg-[#F8FAFC] text-slate-800 font-sans min-h-screen flex">
+
+<!-- Tablet sidebar overlay -->
+<div id="sidebar-overlay"></div>
+
+<!-- ── SIDEBAR ── -->
+<aside id="sidebar" class="sidebar-transition w-64 bg-white border-r border-slate-100 flex flex-col justify-between shrink-0 h-screen sticky top-0 overflow-x-hidden">
+    <div>
+        <div class="p-6 flex items-center justify-between border-b border-slate-50 min-h-[80px]">
+            <div class="flex flex-col hide-on-collapse">
+                 <img 
+        src="logo.png" 
+        alt="Flexwork Logo"
+        class="w-32 h-auto object-contain"
+    >
+            </div>
+            <button id="sidebar-toggle-btn" class="p-2 rounded-xl hover:bg-slate-50 text-slate-500 hover:text-slate-800 transition focus:outline-none mx-auto lg:mx-0">
+                <i data-lucide="menu" class="w-6 h-6"></i>
+            </button>
+        </div>
+        <nav class="px-4 py-4 space-y-1">
+            <a href="#" class="flex items-center gap-3 px-4 py-3 text-sm font-semibold text-slate-600 rounded-xl hover:bg-slate-50 transition">
+                <i data-lucide="layout-dashboard" class="w-5 h-5 text-slate-400 shrink-0"></i>
+                <span class="hide-on-collapse">Dashboard</span>
+            </a>
+            <a href="#" class="flex items-center gap-3 px-4 py-3 text-sm font-semibold text-slate-600 rounded-xl hover:bg-slate-50 transition">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16" class="w-5 h-5 text-slate-400 shrink-0"><path d="M12.5 16a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7m.5-5v1h1a.5.5 0 0 1 0 1h-1v1a.5.5 0 0 1-1 0v-1h-1a.5.5 0 0 1 0-1h1v-1a.5.5 0 0 1 1 0m-2-6a3 3 0 1 1-6 0 3 3 0 0 1 6 0"/><path d="M2 13c0 1 1 1 1 1h5.256A4.5 4.5 0 0 1 8 12.5a4.5 4.5 0 0 1 1.544-3.393Q8.844 9.002 8 9c-5 0-6 3-6 4"/></svg>
+                <span class="hide-on-collapse">Agent</span>
+            </a>
+            <div class="space-y-1">
+                <button id="services-dropdown-btn" class="w-full flex items-center justify-between px-4 py-3 text-sm font-bold text-slate-900 bg-[#FFB800] rounded-xl shadow-sm transition focus:outline-none">
+                    <span class="flex items-center gap-3">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16" class="w-5 h-5 text-slate-900 shrink-0"><path d="M8.186 1.113a.5.5 0 0 0-.372 0L1.846 3.5l2.404.961L10.404 2zm3.564 1.426L5.596 5 8 5.961 14.154 3.5zm3.25 1.748-5.85 2.34v7.195l5.67-2.268A.5.5 0 0 0 15 11.13V4.5a.5.5 0 0 0-.314-.464zM8.5 14.715V7.625l-5.85-2.34v6.634a.5.5 0 0 0 .314.464z"/></svg>
+                        <span class="hide-on-collapse">Our Services</span>
+                    </span>
+                    <i id="services-chevron" data-lucide="chevron-down" class="w-4 h-4 text-slate-900 transition-transform duration-200 hide-on-collapse"></i>
+                </button>
+                <div id="services-menu" class="dropdown-transition max-h-0 overflow-hidden opacity-0 pl-4 pr-2 py-0 space-y-0.5 relative before:absolute before:left-[22px] before:top-0 before:bottom-0 before:w-0.5 before:bg-slate-100">
+                    <a href="#" class="flex items-center gap-2.5 pl-6 pr-2 py-2 text-xs font-bold text-[#3B41E3] bg-[#EEF2FF] rounded-lg relative mt-1">
+                        <span class="w-2 h-2 rounded-full bg-[#3B41E3] shrink-0"></span>Interview Panel
+                    </a>
+                    <a href="#" class="flex items-center gap-2.5 pl-6 pr-2 py-2 text-xs font-medium text-slate-500 rounded-lg hover:bg-slate-50 hover:text-slate-800 transition">
+                        <span class="w-1.5 h-1.5 rounded-full border border-slate-300 bg-white shrink-0"></span>Consultant
+                    </a>
+                    <a href="#" class="flex items-center gap-2.5 pl-6 pr-2 py-2 text-xs font-medium text-slate-500 rounded-lg hover:bg-slate-50 hover:text-slate-800 transition">
+                        <span class="w-1.5 h-1.5 rounded-full border border-slate-300 bg-white shrink-0"></span>Trainer
+                    </a>
+                </div>
+            </div>
+            <a href="#" class="flex items-center gap-3 px-4 py-3 text-sm font-semibold text-slate-600 rounded-xl hover:bg-slate-50 transition">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16" class="w-5 h-5 text-slate-400 shrink-0"><path d="M3 4.5a.5.5 0 0 1 .5-.5h6a.5.5 0 1 1 0 1h-6a.5.5 0 0 1-.5-.5m0 2a.5.5 0 0 1 .5-.5h6a.5.5 0 1 1 0 1h-6a.5.5 0 0 1-.5-.5m0 2a.5.5 0 0 1 .5-.5h6a.5.5 0 1 1 0 1h-6a.5.5 0 0 1-.5-.5m0 2a.5.5 0 0 1 .5-.5h6a.5.5 0 0 1 0 1h-6a.5.5 0 0 1-.5-.5m0 2a.5.5 0 0 1 .5-.5h6a.5.5 0 0 1 0 1h-6a.5.5 0 0 1-.5-.5M11.5 4a.5.5 0 0 0 0 1h1a.5.5 0 0 0 0-1zm0 2a.5.5 0 0 0 0 1h1a.5.5 0 0 0 0-1zm0 2a.5.5 0 0 0 0 1h1a.5.5 0 0 0 0-1zm0 2a.5.5 0 0 0 0 1h1a.5.5 0 0 0 0-1zm0 2a.5.5 0 0 0 0 1h1a.5.5 0 0 0 0-1z"/><path d="M2.354.646a.5.5 0 0 0-.801.13l-.5 1A.5.5 0 0 0 1 2v13H.5a.5.5 0 0 0 0 1h15a.5.5 0 0 0 0-1H15V2a.5.5 0 0 0-.053-.224l-.5-1a.5.5 0 0 0-.8-.13L13 1.293l-.646-.647a.5.5 0 0 0-.708 0L11 1.293l-.646-.647a.5.5 0 0 0-.708 0L9 1.293 8.354.646a.5.5 0 0 0-.708 0L7 1.293 6.354.646a.5.5 0 0 0-.708 0L5 1.293 4.354.646a.5.5 0 0 0-.708 0L3 1.293zm-.217 1.198.51.51a.5.5 0 0 0 .707 0L4 1.707l.646.647a.5.5 0 0 0 .708 0L6 1.707l.646.647a.5.5 0 0 0 .708 0L8 1.707l.646.647a.5.5 0 0 0 .708 0L10 1.707l.646.647a.5.5 0 0 0 .708 0L12 1.707l.646.647a.5.5 0 0 0 .708 0l.509-.51.137.274V15H2V2.118z"/></svg>
+                <span class="hide-on-collapse">Invoices</span>
+            </a>
+            <a href="#" class="flex items-center gap-3 px-4 py-3 text-sm font-semibold text-slate-600 rounded-xl hover:bg-slate-50 transition">
+                <i data-lucide="credit-card" class="w-5 h-5 text-slate-400 shrink-0"></i>
+                <span class="hide-on-collapse">Payments</span>
+            </a>
+        </nav>
+    </div>
+</aside>
+
+<!-- ── MAIN ── -->
+<div class="flex-1 flex flex-col min-w-0">
+    <header class="h-20 bg-white border-b border-slate-100 flex items-center justify-between px-8 shrink-0">
+        <div class="text-sm font-semibold text-slate-400 tracking-wide">Workspace View</div>
+        <div class="flex items-center gap-6">
+            <button class="relative text-slate-400 hover:text-slate-600 transition">
+                <i data-lucide="bell" class="w-6 h-6"></i>
+                <span class="absolute top-0 right-0 w-2 h-2 rounded-full bg-red-500 border-2 border-white"></span>
+            </button>
+            <div class="flex items-center gap-3 cursor-pointer group">
+                <div class="text-right">
+                    <p class="text-sm font-bold text-[#3B41E3] group-hover:text-blue-700 transition">Hello Christmas</p>
+                    <p class="text-[11px] font-semibold text-slate-400 tracking-wider">FW-AGENT02</p>
+                </div>
+                <button class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center border border-slate-200 text-slate-600 group-hover:bg-slate-200 transition">
+                    <i data-lucide="chevron-down" class="w-4 h-4"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-1 p-8 overflow-y-auto max-w-[1400px] w-full mx-auto">
+        <div class="flex flex-row items-center justify-between gap-4 mb-8 flex-wrap">
+            <h1 class="text-2xl font-bold text-slate-900 shrink-0">Interview Panel</h1>
+            <div class="flex items-center gap-2 bg-white p-1.5 rounded-xl border border-slate-100 shadow-sm">
+                <button class="flex items-center gap-2 px-4 py-2 text-xs font-semibold text-slate-600 rounded-lg hover:bg-slate-50 transition">
+                    <i data-lucide="calendar-days" class="w-4 h-4 text-slate-400"></i>Job Posting
+                </button>
+                <button class="flex items-center gap-2 px-4 py-2 text-xs font-bold text-slate-900 bg-[#FFB800] rounded-lg shadow-sm transition">
+                    <i data-lucide="user-check" class="w-4 h-4 text-slate-900"></i>Job Requirement
+                </button>
+                <button class="flex items-center gap-2 px-4 py-2 text-xs font-semibold text-slate-600 rounded-lg hover:bg-slate-50 transition">
+                    <i data-lucide="users" class="w-4 h-4 text-slate-400"></i>Ongoing Requirement
+                </button>
+            </div>
+        </div>
+
+        <!-- Stats -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
+            <div class="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between">
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-xl bg-indigo-50 flex items-center justify-center text-[#3B41E3]"><i data-lucide="layout-grid" class="w-6 h-6"></i></div>
+                    <p class="text-xs font-bold text-slate-800 leading-tight">All Requirement</p>
+                </div>
+                <span class="text-3xl font-bold text-slate-900">20</span>
+            </div>
+            <div class="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between">
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600"><i data-lucide="badge-check" class="w-6 h-6"></i></div>
+                    <p class="text-xs font-bold text-slate-800 leading-tight">Accepted<br>Requirement</p>
+                </div>
+                <span class="text-3xl font-bold text-slate-900">16</span>
+            </div>
+            <div class="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between">
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-xl bg-red-50 flex items-center justify-center text-red-500"><i data-lucide="x-circle" class="w-6 h-6"></i></div>
+                    <p class="text-xs font-bold text-slate-800 leading-tight">Rejected<br>Requirement</p>
+                </div>
+                <span class="text-3xl font-bold text-slate-900">0</span>
+            </div>
+            <div class="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between">
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-xl bg-amber-50 flex items-center justify-center text-amber-500"><i data-lucide="clock" class="w-6 h-6"></i></div>
+                    <p class="text-xs font-bold text-slate-800 leading-tight">Pending<br>Requirement</p>
+                </div>
+                <span class="text-3xl font-bold text-slate-900">4</span>
+            </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="flex flex-col sm:flex-row items-center justify-between gap-4 mb-4">
+            <div class="relative w-full sm:max-w-xs">
+                <i data-lucide="search" class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400"></i>
+                <input type="text" placeholder="Search" class="w-full pl-10 pr-4 py-2 text-sm bg-white border border-slate-200 rounded-xl focus:outline-none focus:border-indigo-500 transition shadow-sm placeholder:text-slate-400">
+            </div>
+            <div class="flex items-center gap-2 bg-white border border-slate-200 rounded-xl px-3 py-1.5 shadow-sm cursor-pointer hover:border-slate-300 transition w-full sm:w-auto justify-between sm:justify-start">
+                <div class="flex items-center gap-2">
+                    <i data-lucide="user-round" class="w-4 h-4 text-slate-400"></i>
+                    <span class="bg-[#6366F1] text-white text-[11px] font-bold px-1.5 py-0.5 rounded">17</span>
+                    <span class="text-xs font-semibold text-slate-700">All Job Role</span>
+                </div>
+                <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400"></i>
+            </div>
+        </div>
+
+        <!-- Table -->
+        <div class="bg-white border border-slate-100 rounded-2xl shadow-sm overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-slate-50 border-b border-slate-100">
+                            <th class="py-3 px-6 text-[11px] font-bold text-slate-400 uppercase tracking-wider whitespace-nowrap">Title</th>
+                            <th class="py-3 px-6 text-[11px] font-bold text-slate-400 uppercase tracking-wider whitespace-nowrap">Role</th>
+                            <th class="py-3 px-6 text-[11px] font-bold text-slate-400 uppercase tracking-wider whitespace-nowrap">Date</th>
+                            <th class="py-3 px-6 text-[11px] font-bold text-slate-400 uppercase tracking-wider whitespace-nowrap">Location</th>
+                            <th class="py-3 px-6 text-[11px] font-bold text-slate-400 uppercase tracking-wider text-center whitespace-nowrap">Action</th>
+                            <th class="py-3 px-6"></th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100 text-sm" id="job-table-body"></tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     VIEW MODAL  (Requirement Details)
+══════════════════════════════════════════════ -->
+<div id="viewModal" class="fixed inset-0 z-50 hidden bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="modal-card bg-white w-full max-w-2xl rounded-3xl shadow-2xl flex flex-col" style="max-height:90vh;">
+
+        <!-- Header -->
+        <div class="flex justify-between items-center px-8 pt-7 pb-5 border-b border-slate-100 shrink-0">
+            <h2 class="text-xl font-bold text-slate-900">Requirement Details</h2>
+            <button id="view-modal-close" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-500 hover:text-slate-800 transition">
+                <i data-lucide="x" class="w-4 h-4"></i>
+            </button>
+        </div>
+
+        <!-- Body -->
+        <div class="overflow-y-auto modal-scroll flex-1 px-8 py-6 space-y-6">
+
+            <!-- Job title block -->
+            <div class="bg-gradient-to-br from-slate-50 to-indigo-50/30 rounded-2xl border border-slate-100 p-5">
+                <div class="flex items-start justify-between gap-3">
+                    <div>
+                        <span id="v-id" class="inline-block text-[10px] font-bold text-slate-400 bg-white border border-slate-200 rounded-md px-2 py-0.5 mb-2"></span>
+                        <h3 id="v-title" class="text-xl font-bold text-slate-900"></h3>
+                        <div class="flex flex-wrap items-center gap-3 mt-3">
+                            <span class="flex items-center gap-1.5 text-xs font-semibold text-slate-500 bg-white border border-slate-200 rounded-lg px-2.5 py-1">
+                                <i data-lucide="briefcase" class="w-3.5 h-3.5 text-indigo-400"></i><span id="v-exp"></span>
+                            </span>
+                            <span class="flex items-center gap-1.5 text-xs font-semibold text-slate-500 bg-white border border-slate-200 rounded-lg px-2.5 py-1">
+                                <i data-lucide="indian-rupee" class="w-3.5 h-3.5 text-emerald-400"></i><span id="v-rate"></span>/hr
+                            </span>
+                            <span class="flex items-center gap-1.5 text-xs font-semibold text-slate-500 bg-white border border-slate-200 rounded-lg px-2.5 py-1">
+                                <i data-lucide="clock" class="w-3.5 h-3.5 text-amber-400"></i><span id="v-hours"></span>
+                            </span>
+                            <span class="flex items-center gap-1.5 text-xs font-semibold text-slate-500 bg-white border border-slate-200 rounded-lg px-2.5 py-1">
+                                <i data-lucide="map-pin" class="w-3.5 h-3.5 text-red-400"></i><span id="v-location"></span>
+                            </span>
+                        </div>
+                    </div>
+                    <button id="open-edit-btn" class="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-indigo-200 bg-indigo-50 hover:bg-indigo-100 text-[#3B41E3] text-xs font-bold transition shrink-0">
+                        <i data-lucide="pencil" class="w-3.5 h-3.5"></i> Edit
+                    </button>
+                </div>
+            </div>
+
+            <div class="border-t border-slate-100"></div>
+
+            <!-- Overview -->
+            <div>
+                <h4 class="text-sm font-bold text-slate-700 mb-2 flex items-center gap-2">
+                    <span class="w-1.5 h-1.5 rounded-full bg-indigo-500 inline-block"></span>Overview
+                </h4>
+                <p id="v-overview" class="text-sm text-slate-500 leading-relaxed pl-3.5"></p>
+            </div>
+
+            <div class="border-t border-slate-100"></div>
+
+            <!-- Skills -->
+            <div>
+                <h4 class="text-sm font-bold text-slate-700 mb-3 flex items-center gap-2">
+                    <span class="w-1.5 h-1.5 rounded-full bg-indigo-500 inline-block"></span>Skills
+                </h4>
+                <div class="space-y-3 pl-3.5">
+                    <div>
+                        <p class="text-xs font-semibold text-slate-400 mb-2 uppercase tracking-wider">Primary</p>
+                        <div id="v-primary-skills" class="flex flex-wrap gap-2"></div>
+                    </div>
+                    <div>
+                        <p class="text-xs font-semibold text-slate-400 mb-2 uppercase tracking-wider">Secondary</p>
+                        <div id="v-secondary-skills" class="flex flex-wrap gap-2"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="border-t border-slate-100"></div>
+
+            <!-- Chat section -->
+            <div class="rounded-2xl overflow-hidden border border-indigo-100">
+                <div class="bg-[#6366F1] px-5 py-3 flex items-center gap-2">
+                    <i data-lucide="message-circle" class="w-4 h-4 text-white/80"></i>
+                    <span class="text-sm font-bold text-white">Chat</span>
+                </div>
+                <div id="chat-messages" class="bg-slate-50 px-5 py-4 space-y-3 min-h-[80px] max-h-[180px] overflow-y-auto modal-scroll">
+                    <p class="text-xs text-slate-400 text-center">No messages yet. Start the conversation below.</p>
+                </div>
+                <div class="bg-white border-t border-slate-100 px-4 py-3 flex items-center gap-3">
+                    <input id="chat-input" type="text" placeholder="Chat...." class="flex-1 text-sm text-slate-700 outline-none placeholder:text-slate-400 bg-transparent">
+                    <button id="chat-send-btn" class="w-9 h-9 rounded-full bg-[#6366F1] hover:bg-indigo-600 flex items-center justify-center transition shadow-sm">
+                        <i data-lucide="send" class="w-4 h-4 text-white"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     EDIT MODAL  (Edit Requirement Details)
+══════════════════════════════════════════════ -->
+<div id="editModal" class="fixed inset-0 z-[60] hidden bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="modal-card bg-white w-full max-w-3xl rounded-3xl shadow-2xl flex flex-col" style="max-height:92vh;">
+
+        <!-- Header -->
+        <div class="flex justify-between items-center px-8 pt-7 pb-5 border-b border-slate-100 shrink-0">
+            <div>
+                <h2 class="text-xl font-bold text-slate-900">Edit Requirement Details</h2>
+                <p id="edit-subtitle" class="text-xs text-slate-400 font-semibold mt-0.5"></p>
+            </div>
+            <button id="edit-modal-close" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-500 hover:text-slate-800 transition">
+                <i data-lucide="x" class="w-4 h-4"></i>
+            </button>
+        </div>
+
+        <!-- Scrollable form body -->
+        <div class="overflow-y-auto modal-scroll flex-1 px-8 py-7 space-y-8">
+
+            <!-- ── Section 1: About Requirements ── -->
+            <div>
+                <div class="form-section-title"><span class="dot"></span>About Requirements</div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-5">
+                    <div>
+                        <label class="field-label">Title <span class="req">*</span></label>
+                        <input id="e-title" type="text" class="fw-input" placeholder="e.g. Python + React JS">
+                    </div>
+                    <div>
+                        <label class="field-label">Role <span title="The job role category" class="field-info">i</span></label>
+                        <input id="e-role" type="text" class="fw-input" placeholder="e.g. Cloud Engineer">
+                    </div>
+                </div>
+
+                <!-- Description rich-text -->
+                <div class="mb-5">
+                    <label class="field-label">Description <span class="req">*</span></label>
+                    <div class="border border-slate-200 rounded-xl overflow-hidden focus-within:border-indigo-400 focus-within:shadow-[0_0_0_3px_rgba(99,102,241,0.1)] transition">
+                        <div class="rte-toolbar">
+                            <button class="rte-btn font-bold" title="Bold">B</button>
+                            <button class="rte-btn italic" title="Italic">I</button>
+                            <button class="rte-btn underline" title="Underline">U</button>
+                            <button class="rte-btn" title="Strikethrough" style="text-decoration:line-through">S</button>
+                            <button class="rte-btn font-mono text-xs" title="Code">&lt;/&gt;</button>
+                            <button class="rte-btn text-base" title="Quote">"</button>
+                            <div class="rte-divider"></div>
+                            <button class="rte-btn" title="Ordered list">1.</button>
+                            <button class="rte-btn" title="Unordered list">•</button>
+                            <div class="rte-divider"></div>
+                            <select class="rte-select"><option>Heading</option><option>H1</option><option>H2</option><option>H3</option><option>Normal</option></select>
+                            <div class="rte-divider"></div>
+                            <button class="rte-btn" title="Link">🔗</button>
+                            <button class="rte-btn" title="Image">🖼</button>
+                            <div class="rte-divider"></div>
+                            <button class="rte-btn" title="Align left">≡</button>
+                            <button class="rte-btn" title="Align center">≡</button>
+                            <button class="rte-btn" title="Align right">≡</button>
+                            <button class="rte-btn" title="Justify">≡</button>
+                        </div>
+                        <div id="e-description" class="rte-area" contenteditable="true" data-placeholder="Write a description..."></div>
+                    </div>
+                </div>
+
+                <!-- Responsibilities rich-text -->
+                <div>
+                    <label class="field-label">Responsibilities <span class="req">*</span></label>
+                    <div class="border border-slate-200 rounded-xl overflow-hidden focus-within:border-indigo-400 focus-within:shadow-[0_0_0_3px_rgba(99,102,241,0.1)] transition">
+                        <div class="rte-toolbar">
+                            <button class="rte-btn font-bold" title="Bold">B</button>
+                            <button class="rte-btn italic" title="Italic">I</button>
+                            <button class="rte-btn underline" title="Underline">U</button>
+                            <button class="rte-btn" title="Strikethrough" style="text-decoration:line-through">S</button>
+                            <button class="rte-btn font-mono text-xs" title="Code">&lt;/&gt;</button>
+                            <button class="rte-btn text-base" title="Quote">"</button>
+                            <div class="rte-divider"></div>
+                            <button class="rte-btn" title="Ordered list">1.</button>
+                            <button class="rte-btn" title="Unordered list">•</button>
+                            <div class="rte-divider"></div>
+                            <select class="rte-select"><option>Heading</option><option>H1</option><option>H2</option><option>H3</option><option>Normal</option></select>
+                            <div class="rte-divider"></div>
+                            <button class="rte-btn" title="Link">🔗</button>
+                            <button class="rte-btn" title="Image">🖼</button>
+                            <div class="rte-divider"></div>
+                            <button class="rte-btn" title="Align left">≡</button>
+                            <button class="rte-btn" title="Align center">≡</button>
+                            <button class="rte-btn" title="Align right">≡</button>
+                            <button class="rte-btn" title="Justify">≡</button>
+                        </div>
+                        <div id="e-responsibilities" class="rte-area" contenteditable="true" data-placeholder="List key responsibilities..."></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── Section 2: Job Preferences ── -->
+            <div>
+                <div class="form-section-title"><span class="dot" style="background:#FFB800"></span>Job Preferences</div>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-5 mb-5">
+                    <div>
+                        <label class="field-label">Mode <span class="req">*</span></label>
+                        <select id="e-mode" class="fw-input fw-select">
+                            <option>Freelancing</option><option>Full-time</option><option>Part-time</option><option>Contract</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="field-label">Priority <span class="req">*</span></label>
+                        <select id="e-priority" class="fw-input fw-select">
+                            <option>VeryHigh</option><option>High</option><option>Medium</option><option>Low</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="field-label">Status <span class="req">*</span></label>
+                        <select id="e-status" class="fw-input fw-select">
+                            <option>Active</option><option>Inactive</option><option>On Hold</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-5 mb-5">
+                    <div>
+                        <label class="field-label">Start Date <span class="req">*</span></label>
+                        <input id="e-start-date" type="date" class="fw-input">
+                    </div>
+                    <div>
+                        <label class="field-label">End Date <span class="req">*</span></label>
+                        <input id="e-end-date" type="date" class="fw-input">
+                    </div>
+                    <div>
+                        <label class="field-label">Requirements Duration <span class="req">*</span></label>
+                        <input id="e-duration" type="number" class="fw-input" placeholder="e.g. 12">
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                    <div>
+                        <label class="field-label">Requirements Duration Units <span class="req">*</span></label>
+                        <select id="e-duration-units" class="fw-input fw-select">
+                            <option>Months</option><option>Weeks</option><option>Days</option><option>Years</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="field-label">Requirements No. of Positions <span class="req">*</span></label>
+                        <input id="e-positions" type="number" class="fw-input" placeholder="e.g. 23">
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── Section 3: Candidate Skills & Experience ── -->
+            <div>
+                <div class="form-section-title"><span class="dot" style="background:#10b981"></span>Candidate Skills and Experience</div>
+
+                <!-- Primary Skills -->
+                <div class="mb-5">
+                    <label class="field-label">Primary Skills <span class="req">*</span></label>
+                    <div id="primary-skills-wrapper" class="skills-input-wrapper">
+                        <input id="primary-skills-input" type="text" placeholder="Search Primary Skills" onkeydown="handleSkillInput(event,'primary')">
+                    </div>
+                </div>
+
+                <!-- Secondary Skills -->
+                <div class="mb-5">
+                    <label class="field-label">Secondary Skills <span class="req">*</span></label>
+                    <div id="secondary-skills-wrapper" class="skills-input-wrapper">
+                        <input id="secondary-skills-input" type="text" placeholder="Search Secondary Skills" onkeydown="handleSkillInput(event,'secondary')">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                    <div>
+                        <label class="field-label">Total Experience <span class="req">*</span></label>
+                        <input id="e-total-exp" type="number" class="fw-input" placeholder="e.g. 2">
+                    </div>
+                    <div>
+                        <label class="field-label">Relevant Experience <span class="req">*</span></label>
+                        <input id="e-relevant-exp" type="number" class="fw-input" placeholder="e.g. 1">
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── Section 4: Candidate Pricing ── -->
+            <div>
+                <div class="form-section-title"><span class="dot" style="background:#f59e0b"></span>Candidate Pricing</div>
+                <div class="grid grid-cols-1 sm:grid-cols-4 gap-5">
+                    <div>
+                        <label class="field-label">Availability <span title="How often the candidate is available" class="field-info">i</span></label>
+                        <input id="e-availability" type="text" class="fw-input" placeholder="e.g. Daily">
+                    </div>
+                    <div>
+                        <label class="field-label">Availability Hours <span class="req">*</span></label>
+                        <input id="e-avail-hours" type="number" class="fw-input" placeholder="e.g. 10">
+                    </div>
+                    <div>
+                        <label class="field-label">Hourly Rate <span class="req">*</span></label>
+                        <input id="e-hourly-rate" type="number" class="fw-input" placeholder="e.g. 234">
+                    </div>
+                    <div>
+                        <label class="field-label">Currency <span class="req">*</span></label>
+                        <select id="e-currency" class="fw-input fw-select">
+                            <option>INR</option><option>USD</option><option>EUR</option><option>GBP</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── Section 5: Client ── -->
+            <div>
+                <div class="form-section-title"><span class="dot" style="background:#8b5cf6"></span>Client</div>
+                <div class="mb-5">
+                    <label class="field-label">Location <span title="Client's city or region" class="field-info">i</span> <span class="req">*</span></label>
+                    <input id="e-location" type="text" class="fw-input" placeholder="e.g. Chennai">
+                </div>
+                <div>
+                    <label class="field-label">About Client <span class="req">*</span></label>
+                    <div class="border border-slate-200 rounded-xl overflow-hidden focus-within:border-indigo-400 focus-within:shadow-[0_0_0_3px_rgba(99,102,241,0.1)] transition">
+                        <div class="rte-toolbar">
+                            <button class="rte-btn font-bold">B</button>
+                            <button class="rte-btn italic">I</button>
+                            <button class="rte-btn underline">U</button>
+                            <button class="rte-btn" style="text-decoration:line-through">S</button>
+                            <button class="rte-btn font-mono text-xs">&lt;/&gt;</button>
+                            <button class="rte-btn text-base">"</button>
+                            <div class="rte-divider"></div>
+                            <button class="rte-btn">1.</button>
+                            <button class="rte-btn">•</button>
+                            <div class="rte-divider"></div>
+                            <select class="rte-select"><option>Heading</option><option>H1</option><option>H2</option><option>Normal</option></select>
+                            <div class="rte-divider"></div>
+                            <button class="rte-btn">🔗</button>
+                            <button class="rte-btn">🖼</button>
+                            <div class="rte-divider"></div>
+                            <button class="rte-btn">≡</button>
+                            <button class="rte-btn">≡</button>
+                            <button class="rte-btn">≡</button>
+                            <button class="rte-btn">≡</button>
+                        </div>
+                        <div id="e-about-client" class="rte-area" contenteditable="true" data-placeholder="Write about the client..."></div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Sticky footer -->
+        <div class="px-8 py-5 border-t border-slate-100 flex items-center justify-end gap-3 shrink-0 bg-white rounded-b-3xl">
+            <button id="edit-reset-btn" class="px-5 py-2.5 rounded-xl border border-slate-200 text-sm font-bold text-slate-600 hover:bg-slate-50 transition">
+                Reset
+            </button>
+            <button id="edit-save-btn" class="px-6 py-2.5 rounded-xl bg-[#FFB800] hover:bg-amber-400 text-sm font-bold text-slate-900 transition shadow-sm">
+                Save Changes
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+/* ── DATA ── */
+const jobs = [
+    { id:"FW-CHNR-2E0Q7", title:"Python + React JS", role:"Python + React JS",
+      date:"17-05-2026", location:"Chennai",
+      icon:"braces", iconBg:"bg-indigo-50", iconColor:"text-[#3B41E3]",
+      exp:"3 Years", rate:"280", hours:"8hrs Daily",
+      overview:"Looking for a skilled Python + ReactJS developer to build scalable web applications. The candidate will work closely with product and design teams to deliver pixel-perfect, high-performance solutions.",
+      primarySkills:["Python","React JS","REST APIs"], secondarySkills:["Docker","PostgreSQL","Git"],
+      recruiter:"https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=100&h=100" },
+    { id:"FW-CHNR-4ERJH", title:"Cloud Engineer", role:"Cloud Engineer",
+      date:"28-04-2026", location:"Hyderabad",
+      icon:"cloud", iconBg:"bg-blue-50", iconColor:"text-blue-600",
+      exp:"4 Years", rate:"320", hours:"9hrs Daily",
+      overview:"Seeking an experienced Cloud Engineer to architect and manage cloud infrastructure on AWS/Azure. Responsible for CI/CD pipelines, cost optimization, and ensuring 99.9% uptime.",
+      primarySkills:["AWS","Azure","Terraform"], secondarySkills:["Kubernetes","Ansible","Linux"],
+      recruiter:"https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=100&h=100" },
+    { id:"FW-CHNR-66KOI", title:"DevOps Engineer", role:"DevOps",
+      date:"16-04-2026", location:"Hyderabad",
+      icon:"terminal", iconBg:"bg-red-50", iconColor:"text-red-500",
+      exp:"5 Years", rate:"350", hours:"10hrs Daily",
+      overview:"Need a DevOps Engineer to bridge development and operations, implementing automated pipelines and infrastructure-as-code practices. Strong containerization skills required.",
+      primarySkills:["Jenkins","Kubernetes","Docker"], secondarySkills:["Bash","Python","Prometheus"],
+      recruiter:"https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=100&h=100" },
+    { id:"FW-DELH-99WQA", title:"Data Scientist", role:"Data Science",
+      date:"22-05-2026", location:"Delhi NCR",
+      icon:"bar-chart-3", iconBg:"bg-emerald-50", iconColor:"text-emerald-600",
+      exp:"2 Years", rate:"234", hours:"10hrs Daily",
+      overview:"Join our analytics team as a Data Scientist. Design and implement ML models, analyze large datasets, and present actionable insights to drive strategic business decisions.",
+      primarySkills:["Python","Machine Learning","SQL"], secondarySkills:["TensorFlow","Tableau","Spark"],
+      recruiter:"https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=100&h=100" },
+    { id:"FW-MUMB-33PLK", title:"Full Stack Developer", role:"MERN Stack",
+      date:"05-06-2026", location:"Mumbai",
+      icon:"layers", iconBg:"bg-amber-50", iconColor:"text-amber-600",
+      exp:"3 Years", rate:"295", hours:"8hrs Daily",
+      overview:"Hiring a Full Stack Developer proficient in the MERN stack. Responsible for end-to-end feature development — from database design to responsive UI — in a fast-paced startup environment.",
+      primarySkills:["MongoDB","Express","React","Node.js"], secondarySkills:["Redis","TypeScript","Jest"],
+      recruiter:"https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&q=80&w=100&h=100" },
+    { id:"FW-BLRU-77XCV", title:"UI/UX Designer", role:"Design",
+      date:"12-06-2026", location:"Bengaluru",
+      icon:"palette", iconBg:"bg-purple-50", iconColor:"text-purple-600",
+      exp:"2 Years", rate:"210", hours:"8hrs Daily",
+      overview:"Creative UI/UX Designer to craft beautiful, intuitive interfaces. Own the design process from wireframes to prototypes, collaborating closely with product managers and engineers.",
+      primarySkills:["Figma","Adobe XD","Prototyping"], secondarySkills:["HTML/CSS","Illustration","User Research"],
+      recruiter:"https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=100&h=100" }
+];
+
+let currentJobIdx = null;
+
+/* ── BUILD TABLE ── */
+const tbody = document.getElementById('job-table-body');
+jobs.forEach((job, idx) => {
+    const tr = document.createElement('tr');
+    tr.className = "hover:bg-slate-50/50 transition";
+    tr.innerHTML = `
+        <td class="py-4 px-6">
+            <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-lg ${job.iconBg} flex items-center justify-center ${job.iconColor} shrink-0">
+                    <i data-lucide="${job.icon}" class="w-4 h-4"></i>
+                </div>
+                <div>
+                    <div class="font-bold text-slate-900">${job.title}</div>
+                    <div class="text-[11px] font-semibold text-slate-400 mt-0.5">${job.id}</div>
+                </div>
+            </div>
+        </td>
+        <td class="py-4 px-6 font-medium text-slate-600 whitespace-nowrap">${job.role}</td>
+        <td class="py-4 px-6 font-medium text-slate-600 whitespace-nowrap">
+            <div class="flex items-center gap-1.5"><i data-lucide="calendar" class="w-3.5 h-3.5 text-slate-400 shrink-0"></i>${job.date}</div>
+        </td>
+        <td class="py-4 px-6 font-medium text-slate-600 whitespace-nowrap">
+            <div class="flex items-center gap-1.5"><i data-lucide="map-pin" class="w-3.5 h-3.5 text-slate-400 shrink-0"></i>${job.location}</div>
+        </td>
+        <td class="py-4 px-6 text-center">
+            <button onclick="openViewModal(${idx})" class="bg-[#6366F1] hover:bg-indigo-600 text-white text-xs font-bold px-4 py-2 rounded-lg transition shadow-sm flex items-center gap-1.5 mx-auto">
+                See More <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+            </button>
+        </td>
+        <td class="py-4 px-6 text-right">
+            <img src="${job.recruiter}" alt="Recruiter" class="w-10 h-10 rounded-full inline-block object-cover border border-slate-100 shadow-sm">
+        </td>`;
+    tbody.appendChild(tr);
+});
+
+/* ── VIEW MODAL ── */
+const viewModal  = document.getElementById('viewModal');
+const viewCard   = viewModal.querySelector('.modal-card');
+
+function openViewModal(idx) {
+    currentJobIdx = idx;
+    const job = jobs[idx];
+
+    document.getElementById('v-id').textContent       = job.id + ' |';
+    document.getElementById('v-title').textContent    = job.title;
+    document.getElementById('v-exp').textContent      = job.exp;
+    document.getElementById('v-rate').textContent     = job.rate;
+    document.getElementById('v-hours').textContent    = job.hours;
+    document.getElementById('v-location').textContent = job.location;
+    document.getElementById('v-overview').textContent = job.overview;
+
+    document.getElementById('v-primary-skills').innerHTML =
+        job.primarySkills.map(s => `<span class="skill-tag skill-primary">${s}</span>`).join('');
+    document.getElementById('v-secondary-skills').innerHTML =
+        job.secondarySkills.map(s => `<span class="skill-tag skill-secondary">${s}</span>`).join('');
+
+    document.getElementById('chat-messages').innerHTML =
+        `<p class="text-xs text-slate-400 text-center">No messages yet. Start the conversation below.</p>`;
+    document.getElementById('chat-input').value = '';
+
+    viewModal.classList.remove('hidden');
+    triggerAnim(viewCard);
+    lucide.createIcons();
+}
+
+document.getElementById('view-modal-close').addEventListener('click', () => viewModal.classList.add('hidden'));
+viewModal.addEventListener('click', e => { if (e.target === viewModal) viewModal.classList.add('hidden'); });
+
+/* ── EDIT MODAL ── */
+const editModal = document.getElementById('editModal');
+const editCard  = editModal.querySelector('.modal-card');
+
+let editPrimarySkills   = [];
+let editSecondarySkills = [];
+
+document.getElementById('open-edit-btn').addEventListener('click', () => {
+    const job = jobs[currentJobIdx];
+    document.getElementById('edit-subtitle').textContent = job.id + ' — ' + job.title;
+
+    // Populate fields
+    document.getElementById('e-title').value         = job.title;
+    document.getElementById('e-role').value          = job.role;
+    document.getElementById('e-description').textContent  = job.overview;
+    document.getElementById('e-responsibilities').textContent = 'Responsible for delivering scalable, well-tested code and collaborating with cross-functional teams.';
+    document.getElementById('e-mode').value          = 'Freelancing';
+    document.getElementById('e-priority').value      = 'VeryHigh';
+    document.getElementById('e-status').value        = 'Active';
+
+    // Dates
+    const today = new Date();
+    document.getElementById('e-start-date').value = '2026-05-19';
+    document.getElementById('e-end-date').value   = '2026-05-24';
+    document.getElementById('e-duration').value   = '12';
+    document.getElementById('e-positions').value  = '23';
+
+    // Pricing
+    document.getElementById('e-availability').value  = 'Daily';
+    document.getElementById('e-avail-hours').value   = job.hours.replace(/[^0-9]/g,'');
+    document.getElementById('e-hourly-rate').value   = job.rate;
+    document.getElementById('e-currency').value      = 'INR';
+    document.getElementById('e-location').value      = job.location;
+    document.getElementById('e-about-client').textContent = 'A fast-growing product company with a global client base.';
+    document.getElementById('e-total-exp').value     = job.exp.replace(/[^0-9]/g,'');
+    document.getElementById('e-relevant-exp').value  = Math.max(1, parseInt(job.exp) - 1);
+
+    // Skills chips
+    editPrimarySkills   = [...job.primarySkills];
+    editSecondarySkills = [...job.secondarySkills];
+    renderSkillChips('primary');
+    renderSkillChips('secondary');
+
+    editModal.classList.remove('hidden');
+    triggerAnim(editCard);
+    lucide.createIcons();
+});
+
+document.getElementById('edit-modal-close').addEventListener('click', () => editModal.classList.add('hidden'));
+editModal.addEventListener('click', e => { if (e.target === editModal) editModal.classList.add('hidden'); });
+
+document.getElementById('edit-reset-btn').addEventListener('click', () => {
+    if (currentJobIdx !== null) openEditFromIndex(currentJobIdx);
+});
+
+document.getElementById('edit-save-btn').addEventListener('click', () => {
+    // Flash save feedback
+    const btn = document.getElementById('edit-save-btn');
+    btn.textContent = '✓ Saved!';
+    btn.classList.add('bg-emerald-400');
+    btn.classList.remove('bg-[#FFB800]');
+    setTimeout(() => {
+        btn.textContent = 'Save Changes';
+        btn.classList.remove('bg-emerald-400');
+        btn.classList.add('bg-[#FFB800]');
+        editModal.classList.add('hidden');
+    }, 1200);
+});
+
+/* ── SKILLS CHIPS ── */
+function renderSkillChips(type) {
+    const wrapper = document.getElementById(type + '-skills-wrapper');
+    const input   = document.getElementById(type + '-skills-input');
+    const arr     = type === 'primary' ? editPrimarySkills : editSecondarySkills;
+
+    // Remove old chips (keep the input)
+    wrapper.querySelectorAll('.edit-skill-chip').forEach(c => c.remove());
+
+    arr.forEach((skill, i) => {
+        const chip = document.createElement('span');
+        chip.className = 'edit-skill-chip';
+        chip.innerHTML = `${skill}<span class="remove-chip" onclick="removeSkill('${type}',${i})">✕</span>`;
+        wrapper.insertBefore(chip, input);
+    });
+}
+
+function removeSkill(type, idx) {
+    if (type === 'primary')   editPrimarySkills.splice(idx, 1);
+    else                       editSecondarySkills.splice(idx, 1);
+    renderSkillChips(type);
+}
+
+function handleSkillInput(e, type) {
+    if (e.key === 'Enter' || e.key === ',') {
+        e.preventDefault();
+        const val = e.target.value.trim().replace(/,$/, '');
+        if (!val) return;
+        if (type === 'primary')   editPrimarySkills.push(val);
+        else                       editSecondarySkills.push(val);
+        e.target.value = '';
+        renderSkillChips(type);
+    }
+}
+
+/* ── CHAT ── */
+const chatInput    = document.getElementById('chat-input');
+const chatMessages = document.getElementById('chat-messages');
+const chatSendBtn  = document.getElementById('chat-send-btn');
+
+function sendMessage() {
+    const text = chatInput.value.trim();
+    if (!text) return;
+    if (chatMessages.querySelector('p.text-center')) chatMessages.innerHTML = '';
+
+    const u = document.createElement('div');
+    u.className = 'flex justify-end';
+    u.innerHTML = `<div class="chat-bubble-user text-xs px-3 py-2 max-w-[75%]">${text}</div>`;
+    chatMessages.appendChild(u);
+    chatInput.value = '';
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+
+    setTimeout(() => {
+        const a = document.createElement('div');
+        a.className = 'flex justify-start';
+        a.innerHTML = `<div class="chat-bubble-agent text-xs px-3 py-2 max-w-[75%] text-slate-700">Thanks! Your message has been received. Our team will review and respond shortly.</div>`;
+        chatMessages.appendChild(a);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }, 800);
+}
+chatSendBtn.addEventListener('click', sendMessage);
+chatInput.addEventListener('keydown', e => { if (e.key === 'Enter') sendMessage(); });
+
+/* ── HELPERS ── */
+function triggerAnim(el) {
+    el.style.animation = 'none';
+    requestAnimationFrame(() => { el.style.animation = ''; });
+}
+
+/* ── SIDEBAR ── */
+const sidebar        = document.getElementById('sidebar');
+const servicesMenu   = document.getElementById('services-menu');
+const servicesChevron= document.getElementById('services-chevron');
+const sidebarOverlay = document.getElementById('sidebar-overlay');
+let isSidebarCollapsed = false;
+let isDropdownOpen     = false;
+let isTabletExpanded   = false;
+
+function isTablet() {
+    return window.innerWidth >= 768 && window.innerWidth <= 1024;
+}
+
+function openServicesMenu() {
+    /* Use scrollHeight — works when overflow:hidden but content exists */
+    servicesMenu.style.maxHeight = 'none';
+    servicesMenu.style.opacity   = '1';
+    servicesMenu.style.paddingTop    = '4px';
+    servicesMenu.style.paddingBottom = '4px';
+    if (servicesChevron) servicesChevron.style.transform = 'rotate(0deg)';
+    isDropdownOpen = true;
+}
+
+function closeServicesMenu() {
+    servicesMenu.style.maxHeight    = '0';
+    servicesMenu.style.opacity      = '0';
+    servicesMenu.style.paddingTop   = '0';
+    servicesMenu.style.paddingBottom= '0';
+    if (servicesChevron) servicesChevron.style.transform = 'rotate(-90deg)';
+    isDropdownOpen = false;
+}
+
+function openTabletSidebar() {
+    isTabletExpanded = true;
+    sidebar.classList.add('tablet-expanded');
+    sidebar.style.width = '240px';
+    sidebarOverlay.classList.add('active');
+    openServicesMenu();
+}
+
+function closeTabletSidebar() {
+    isTabletExpanded = false;
+    sidebar.classList.remove('tablet-expanded');
+    sidebar.style.width = '';
+    sidebarOverlay.classList.remove('active');
+    closeServicesMenu();
+}
+
+sidebarOverlay.addEventListener('click', () => {
+    if (isTablet()) closeTabletSidebar();
+});
+
+window.addEventListener('resize', () => {
+    if (!isTablet()) {
+        sidebarOverlay.classList.remove('active');
+        sidebar.classList.remove('tablet-expanded');
+        sidebar.style.width = '';
+    }
+});
+
+document.getElementById('sidebar-toggle-btn').addEventListener('click', () => {
+    if (isTablet()) {
+        isTabletExpanded ? closeTabletSidebar() : openTabletSidebar();
+        return;
+    }
+    isSidebarCollapsed = !isSidebarCollapsed;
+    if (isSidebarCollapsed) {
+        sidebar.classList.add('w-20', 'sidebar-collapsed');
+        sidebar.classList.remove('w-64');
+        closeServicesMenu();
+    } else {
+        sidebar.classList.add('w-64');
+        sidebar.classList.remove('w-20', 'sidebar-collapsed');
+        openServicesMenu();
+    }
+});
+
+document.getElementById('services-dropdown-btn').addEventListener('click', () => {
+    if (isTablet()) {
+        if (!isTabletExpanded) {
+            openTabletSidebar(); // this already calls openServicesMenu()
+            return;
+        }
+        // Already expanded — toggle the menu
+        isDropdownOpen ? closeServicesMenu() : openServicesMenu();
+        return;
+    }
+    if (isSidebarCollapsed) {
+        isSidebarCollapsed = false;
+        sidebar.classList.add('w-64');
+        sidebar.classList.remove('w-20', 'sidebar-collapsed');
+    }
+    isDropdownOpen ? closeServicesMenu() : openServicesMenu();
+});
+
+lucide.createIcons();
+/* Open dropdown by default only on desktop */
+if (!isTablet()) openServicesMenu();
+</script>
+</body>
+</html>

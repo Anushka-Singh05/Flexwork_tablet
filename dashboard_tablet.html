@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html class="light" lang="en">
+<head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Flexwork - Dashboard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+<script id="tailwind-config">
+  tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        colors: {
+          "surface-container-high": "#e5e8ed",
+          "on-secondary-container": "#6b4b00",
+          "error": "#ba1a1a",
+          "surface-container-highest": "#dfe3e8",
+          "on-surface": "#181c20",
+          "tertiary-container": "#6b62e8",
+          "surface": "#f6fafe",
+          "secondary": "#7c5800",
+          "on-surface-variant": "#3f484f",
+          "surface-container-lowest": "#ffffff",
+          "outline-variant": "#bec8d0",
+          "on-secondary": "#ffffff",
+          "surface-container": "#ebeef3",
+          "tertiary-fixed": "#e3dfff",
+          "primary": "#00628b",
+          "background": "#f6fafe",
+          "outline": "#6f7880",
+          "surface-variant": "#dfe3e8",
+          "surface-container-low": "#f0f4f9",
+          "secondary-container": "#feb700",
+          "tertiary": "#5247cd"
+        },
+        fontFamily: { sans: ["Plus Jakarta Sans"] },
+        fontSize: {
+          "headline-md": ["24px", {lineHeight:"32px", fontWeight:"600"}],
+          "title-sm":    ["18px", {lineHeight:"24px", fontWeight:"600"}],
+          "label-sm":    ["12px", {lineHeight:"16px", fontWeight:"500"}],
+          "body-md":     ["14px", {lineHeight:"20px", fontWeight:"400"}]
+        }
+      }
+    }
+  }
+</script>
+<style>
+  * { font-family: 'Plus Jakarta Sans', sans-serif; }
+  .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+
+  /* Sidebar */
+  #sidebar { width:240px; transition:width .25s cubic-bezier(.4,0,.2,1); overflow:hidden; }
+  #sidebar.collapsed { width:68px; }
+  .nav-label, .logo-wrap { transition:opacity .18s ease, max-width .18s ease; white-space:nowrap; overflow:hidden; max-width:200px; }
+  #sidebar.collapsed .nav-label,
+  #sidebar.collapsed .logo-wrap { opacity:0; max-width:0; pointer-events:none; }
+
+  /* Layout */
+  #main-content { transition:margin-left .25s cubic-bezier(.4,0,.2,1); margin-left:240px; }
+  #main-content.sc { margin-left:68px; }
+  #top-header { transition:left .25s cubic-bezier(.4,0,.2,1),width .25s cubic-bezier(.4,0,.2,1); left:240px; width:calc(100% - 240px); }
+  #top-header.sc { left:68px; width:calc(100% - 68px); }
+
+  /* Services sub-menu */
+  #svc-dd { max-height:0; overflow:hidden; transition:max-height .22s cubic-bezier(.4,0,.2,1); }
+  #svc-dd.open { max-height:180px; }
+  #svc-arrow { transition:transform .2s ease; display:inline-block; }
+  #svc-arrow.open { transform:rotate(180deg); }
+
+  /* Collapsed nav tooltips */
+  .nav-item { position:relative; }
+  .nav-tip {
+    display:none; position:absolute; left:calc(100% + 8px); top:50%; transform:translateY(-50%);
+    background:#2c3135; color:#fff; font-size:12px; padding:4px 10px;
+    border-radius:6px; white-space:nowrap; pointer-events:none; z-index:200;
+  }
+  .nav-tip::before {
+    content:''; position:absolute; left:-5px; top:50%; transform:translateY(-50%);
+    border:5px solid transparent; border-right-color:#2c3135; border-left:0;
+  }
+  #sidebar.collapsed .nav-item:hover .nav-tip { display:block; }
+
+  /* Mobile */
+  #mob-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.35); z-index:35; }
+  #mob-overlay.show { display:block; }
+  @media(max-width:767px){
+    #sidebar { position:fixed; left:0; top:0; height:100%; z-index:40; transform:translateX(-100%); width:240px !important; transition:transform .25s cubic-bezier(.4,0,.2,1); }
+    #sidebar.mob-open { transform:translateX(0); }
+    #sidebar.collapsed .nav-label, #sidebar.collapsed .logo-wrap { opacity:1; max-width:200px; }
+    #main-content { margin-left:0 !important; }
+    #top-header { left:0 !important; width:100% !important; }
+  }
+
+  /* Pie tooltip */
+  .ptip {
+    position:absolute; background:#2c3135; color:#fff; font-size:12px; font-weight:600;
+    padding:5px 10px; border-radius:6px; pointer-events:none; opacity:0;
+    transition:opacity .15s ease; white-space:nowrap; z-index:50;
+    transform:translate(-50%,-140%);
+  }
+   select option {
+    color: #1e293b;
+    background: #ffffff;
+  }
+
+  /* Date picker button */
+  .date-btn { position:relative; display:flex; align-items:center; gap:8px;
+    background:rgba(255,255,255,.15); border:1px solid rgba(255,255,255,.25);
+    color:#fff; padding:6px 14px; border-radius:8px; cursor:pointer;
+    font-size:14px; font-weight:500; transition:background .2s; white-space:nowrap; }
+  .date-btn:hover { background:rgba(255,255,255,.28); }
+  .date-btn input[type=date] {
+    position:absolute; inset:0; opacity:0; cursor:pointer; width:100%; height:100%;
+  }
+  /* hide native calendar icon so our icon shows */
+  .date-btn input[type=date]::-webkit-calendar-picker-indicator { opacity:0; position:absolute; inset:0; width:100%; height:100%; cursor:pointer; }
+
+  /* ═══════════════════════════════════
+     TABLET  768px – 1024px
+  ═══════════════════════════════════ */
+  @media(min-width:768px) and (max-width:1024px){
+    #sidebar {
+      width: 68px !important;
+      position: fixed !important;
+      left: 0; top: 0; height: 100vh; z-index: 40;
+      overflow: hidden;
+      transition: width .25s cubic-bezier(.4,0,.2,1);
+      display: flex !important;
+      flex-direction: column;
+    }
+    #sidebar .nav-label, #sidebar .logo-wrap { opacity:0; max-width:0; pointer-events:none; }
+    #sidebar.tab-open { width: 240px !important; overflow-y:auto; overflow-x:hidden; }
+    #sidebar.tab-open .nav-label, #sidebar.tab-open .logo-wrap { opacity:1; max-width:200px; pointer-events:auto; }
+    #svc-dd { max-height:0 !important; }
+    #sidebar.tab-open #svc-dd.open { max-height:180px !important; }
+    #svc-arrow { opacity:0; }
+    #sidebar.tab-open #svc-arrow { opacity:1; }
+    #tab-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.35); z-index:39; }
+    #tab-overlay.show { display:block; }
+    #main-content { margin-left:68px !important; }
+    #top-header { left:68px !important; width:calc(100% - 68px) !important; padding:0 16px; }
+    .md\:grid-cols-12 { grid-template-columns: 1fr 1fr !important; }
+    .md\:col-span-5 { grid-column: span 1 / span 1 !important; }
+    .md\:col-span-4 { grid-column: span 1 / span 1 !important; }
+    .md\:col-span-3 { grid-column: span 2 / span 2 !important; }
+    .lg\:grid-cols-2 { grid-template-columns: 1fr !important; }
+    .lg\:border-l { border-left:none !important; border-top:1px solid #bec8d0 !important; }
+    .lg\:pt-0 { padding-top:1.5rem !important; }
+    .lg\:pl-6 { padding-left:0 !important; }
+    .date-btn { font-size:12px; padding:5px 10px; }
+    .nav-item a, .nav-item button { min-height:44px; }
+    .md\:hidden.fixed.bottom-0 { display:none !important; }
+  }
+  @media(min-width:768px) and (max-width:860px){
+    .md\:grid-cols-12 { grid-template-columns:1fr !important; }
+    .md\:col-span-5,.md\:col-span-4,.md\:col-span-3 { grid-column:span 1/span 1 !important; }
+  }
+
+</style>
+</head>
+<body class="bg-surface text-on-surface min-h-screen flex">
+
+<div id="mob-overlay"></div>
+<div id="tab-overlay"></div>
+
+<!-- ═══ SIDEBAR ═══ -->
+<aside id="sidebar" class="h-full border-r border-outline-variant fixed left-0 top-0 flex-col z-40 hidden md:flex bg-surface">
+  <!-- Logo + toggle -->
+  <div class="flex items-center gap-2 px-3 py-5 border-b border-outline-variant">
+    <div class="logo-wrap flex items-center flex-shrink-0">
+      <img src="logo.png" alt="Flexwork" class="h-16 w-auto object-contain">
+    </div>
+    <button id="sidebar-toggle" class="ml-auto w-10 h-10 flex-shrink-0 flex items-center justify-center rounded-lg hover:bg-surface-container-high transition-colors" aria-label="Toggle sidebar">
+      <span class="material-symbols-outlined" style="color:#111;">menu</span>
+    </button>
+  </div>
+
+  <nav class="flex-grow flex flex-col gap-0.5 px-2 py-3 overflow-y-auto">
+    <a class="nav-item flex items-center gap-3 px-3 py-3 rounded-lg bg-secondary-container text-on-secondary-container" href="#">
+      <span class="material-symbols-outlined flex-shrink-0">dashboard</span>
+      <span class="nav-label font-semibold text-[15px]">Dashboard</span>
+      <span class="nav-tip">Dashboard</span>
+    </a>
+    <a class="nav-item flex items-center gap-3 px-3 py-3 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-colors" href="#">
+      <span class="material-symbols-outlined flex-shrink-0">person_add</span>
+      <span class="nav-label font-semibold text-[15px]">Agent</span>
+      <span class="nav-tip">Agent</span>
+    </a>
+    <!-- Our Services with dropdown -->
+    <div class="nav-item">
+      <button onclick="toggleSvc()" class="w-full flex items-center gap-3 px-3 py-3 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-colors">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="flex-shrink-0" viewBox="0 0 16 16">
+          <path d="M8.186 1.113a.5.5 0 0 0-.372 0L1.846 3.5l2.404.961L10.404 2zm3.564 1.426L5.596 5 8 5.961 14.154 3.5zm3.25 1.7-6.5 2.6v7.922l6.5-2.6V4.24zM7.5 14.762V6.838L1 4.239v7.923zM7.443.184a1.5 1.5 0 0 1 1.114 0l7.129 2.852A.5.5 0 0 1 16 3.5v8.662a1 1 0 0 1-.629.928l-7.185 2.874a.5.5 0 0 1-.372 0L.63 13.09a1 1 0 0 1-.63-.928V3.5a.5.5 0 0 1 .314-.464z"/>
+        </svg>
+        <span class="nav-label font-semibold text-[15px] flex-grow text-left">Our Services</span>
+        <span id="svc-arrow" class="nav-label material-symbols-outlined text-base">expand_more</span>
+      </button>
+      <div id="svc-dd" class="nav-label flex flex-col gap-0.5 pl-10">
+        <a href="#" class="flex items-center gap-2 px-3 py-2 text-[13px] font-medium text-on-surface-variant rounded-lg hover:bg-surface-container-high transition-colors">
+          <span class="w-1.5 h-1.5 rounded-full bg-outline-variant flex-shrink-0"></span>Interview Panel
+        </a>
+        <a href="#" class="flex items-center gap-2 px-3 py-2 text-[13px] font-medium text-on-surface-variant rounded-lg hover:bg-surface-container-high transition-colors">
+          <span class="w-1.5 h-1.5 rounded-full bg-outline-variant flex-shrink-0"></span>Counselling
+        </a>
+        <a href="#" class="flex items-center gap-2 px-3 py-2 text-[13px] font-medium text-on-surface-variant rounded-lg hover:bg-surface-container-high transition-colors">
+          <span class="w-1.5 h-1.5 rounded-full bg-outline-variant flex-shrink-0"></span>Training
+        </a>
+      </div>
+      <span class="nav-tip">Our Services</span>
+    </div>
+    <a class="nav-item flex items-center gap-3 px-3 py-3 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-colors" href="#">
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="flex-shrink-0" viewBox="0 0 16 16">
+        <path d="M3 4.5a.5.5 0 0 1 .5-.5h6a.5.5 0 1 1 0 1h-6a.5.5 0 0 1-.5-.5m0 2a.5.5 0 0 1 .5-.5h6a.5.5 0 1 1 0 1h-6a.5.5 0 0 1-.5-.5m0 2a.5.5 0 0 1 .5-.5h6a.5.5 0 1 1 0 1h-6a.5.5 0 0 1-.5-.5m0 2a.5.5 0 0 1 .5-.5h6a.5.5 0 0 1 0 1h-6a.5.5 0 0 1-.5-.5m0 2a.5.5 0 0 1 .5-.5h6a.5.5 0 0 1 0 1h-6a.5.5 0 0 1-.5-.5M11.5 4a.5.5 0 0 0 0 1h1a.5.5 0 0 0 0-1zm0 2a.5.5 0 0 0 0 1h1a.5.5 0 0 0 0-1zm0 2a.5.5 0 0 0 0 1h1a.5.5 0 0 0 0-1zm0 2a.5.5 0 0 0 0 1h1a.5.5 0 0 0 0-1zm0 2a.5.5 0 0 0 0 1h1a.5.5 0 0 0 0-1z"/>
+        <path d="M2.354.646a.5.5 0 0 0-.801.13l-.5 1A.5.5 0 0 0 1 2v13H.5a.5.5 0 0 0 0 1h15a.5.5 0 0 0 0-1H15V2a.5.5 0 0 0-.053-.224l-.5-1a.5.5 0 0 0-.8-.13L13 1.293l-.646-.647a.5.5 0 0 0-.708 0L11 1.293l-.646-.647a.5.5 0 0 0-.708 0L9 1.293 8.354.646a.5.5 0 0 0-.708 0L7 1.293 6.354.646a.5.5 0 0 0-.708 0L5 1.293 4.354.646a.5.5 0 0 0-.708 0L3 1.293zm-.217 1.198.51.51a.5.5 0 0 0 .707 0L4 1.707l.646.647a.5.5 0 0 0 .708 0L6 1.707l.646.647a.5.5 0 0 0 .708 0L8 1.707l.646.647a.5.5 0 0 0 .708 0L10 1.707l.646.647a.5.5 0 0 0 .708 0L12 1.707l.646.647a.5.5 0 0 0 .708 0l.509-.51.137.274V15H2V2.118z"/>
+      </svg>
+      <span class="nav-label font-semibold text-[15px]">Invoices</span>
+      <span class="nav-tip">Invoices</span>
+    </a>
+    <a class="nav-item flex items-center gap-3 px-3 py-3 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-colors" href="#">
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="flex-shrink-0" viewBox="0 0 16 16">
+        <path d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5M2 2a1 1 0 0 0-1 1v1h14V3a1 1 0 0 0-1-1zm13 3H1v9a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1z"/>
+      </svg>
+      <span class="nav-label font-semibold text-[15px]">Payments</span>
+      <span class="nav-tip">Payments</span>
+    </a>
+  </nav>
+</aside>
+
+<!-- ═══ MAIN ═══ -->
+<main id="main-content" class="flex-grow min-h-screen">
+
+  <!-- Header -->
+  <header id="top-header" class="fixed top-0 right-0 z-30 h-16 bg-surface shadow-sm flex items-center justify-between px-4 sm:px-6">
+    <div class="flex items-center gap-3">
+      <button id="mob-menu-btn" class="md:hidden" aria-label="Open menu">
+        <span class="material-symbols-outlined" style="color:#111;">menu</span>
+      </button>
+      <h2 class="font-semibold text-[22px]" style="color:#111111;">Dashboard</h2>
+    </div>
+    <div class="flex items-center gap-5">
+      <div class="relative"><span class="material-symbols-outlined text-primary">mail</span><span class="absolute -top-2 -right-2 bg-error text-white text-[10px] w-4 h-4 flex items-center justify-center rounded-full">6</span></div>
+      <div class="relative"><span class="material-symbols-outlined text-primary">notifications</span><span class="absolute -top-2 -right-2 bg-error text-white text-[10px] w-4 h-4 flex items-center justify-center rounded-full">6</span></div>
+      <div class="flex items-center gap-2">
+        <div class="text-right hidden sm:block">
+          <p class="font-semibold text-[14px] text-on-surface leading-tight">Hello Prakash</p>
+          <p class="text-[11px] text-on-surface-variant">FW-EMPR18</p>
+        </div>
+        <img alt="User" class="w-10 h-10 rounded-full border-2 border-secondary" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAYcGaXgDqzwaOKKRzv5aFayyO38PbNnfJzNU6CIxyzP3UDvHF44q9oOmGEN2NmC4XkuhVrNBrV8KZ8tkNtBwEsbQB9JkDysKs4ezl8KdDDv4HM1F-WLGYoozkrDY69fhzhtu0NwycKIdFlXw8LfW-iUKd-CykOBduhOkltqtCSvU7KS-le3RqPiPn0LwSKM3UIFU5BiBr15wxGunfLBjCksCDQZvcwxz9w3Q9wwiMuZrC4LXV9mwOakGR3CuYYkz6yoDV0V4Yu3Aqq">
+        <span class="material-symbols-outlined text-outline hidden sm:inline">expand_more</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Content -->
+  <div class="mt-16 p-4 sm:p-6 lg:p-8 space-y-6">
+
+    <!-- Top Row -->
+    <div class="grid grid-cols-1 md:grid-cols-12 gap-4 sm:gap-6">
+
+      <!-- ── Requirements Donut ── -->
+      <div class="md:col-span-5 bg-surface-container-lowest rounded-xl shadow-sm border border-outline-variant overflow-hidden">
+        <div class="px-4 py-3 text-white font-semibold text-[17px]" style="background:#7b7dfc;">Requirements : 10</div>
+        <div class="p-5 flex flex-col items-center">
+          <!-- Container: explicit size, overflow visible so hover-scale isn't clipped -->
+          <div class="relative" style="width:200px;height:200px;overflow:visible;">
+            <svg id="req-pie" viewBox="0 0 200 200" width="200" height="200" style="overflow:visible;display:block;"></svg>
+            <!-- Centre label -->
+            <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+              <div style="width:96px;height:96px;background:#fff;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;">
+                <span id="req-cv" style="font-size:32px;font-weight:700;color:#181c20;line-height:1;">10</span>
+                <span id="req-cl" style="font-size:11px;color:#6f7880;margin-top:2px;">Total</span>
+              </div>
+            </div>
+            <div id="req-tip" class="ptip"></div>
+          </div>
+          <div class="mt-6 flex gap-4 text-[12px] flex-wrap justify-center">
+            <div class="flex items-center gap-2"><div class="w-3 h-3 rounded-full" style="background:#7b7dfc;"></div><span class="text-on-surface-variant">Accepted: 7</span></div>
+            <div class="flex items-center gap-2"><div class="w-3 h-3 rounded-full" style="background:#feb700;"></div><span class="text-on-surface-variant">In Progress: 2</span></div>
+            <div class="flex items-center gap-2"><div class="w-3 h-3 rounded-full" style="background:#ff5c5c;"></div><span class="text-on-surface-variant">Rejected: 1</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Active Resources Bar ── -->
+      <div class="md:col-span-4 bg-surface-container-lowest rounded-xl shadow-sm border border-outline-variant overflow-hidden">
+        <div class="px-4 py-3 text-white font-semibold text-[17px]" style="background:#7b7dfc;">Active Resources : 35</div>
+        <div class="p-5 flex flex-col justify-end h-64">
+          <div class="flex items-end justify-around gap-4 h-40">
+            <div class="flex flex-col items-center gap-2 w-full">
+              <span class="text-[10px] font-semibold" style="color:#7b7dfc;">7</span>
+              <div class="w-full rounded-t-lg h-32" style="background:#ffcd00;"></div>
+            </div>
+            <div class="flex flex-col items-center gap-2 w-full">
+              <span class="text-[10px] font-semibold" style="color:#7b7dfc;">2</span>
+              <div class="w-full rounded-t-lg h-12" style="background:#ff8a65;"></div>
+            </div>
+            <div class="flex flex-col items-center gap-2 w-full">
+              <span class="text-[10px] font-semibold" style="color:#7b7dfc;">1</span>
+              <div class="w-full rounded-t-lg h-6" style="background:#7b7dfc;"></div>
+            </div>
+          </div>
+          <div class="mt-6 grid grid-cols-3 gap-2 text-[10px] text-center font-medium">
+            <p class="text-primary truncate">Interview Panels</p>
+            <p style="color:#ff8a65;" class="truncate">Consultant</p>
+            <p style="color:#7b7dfc;" class="truncate">Trainer</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── My Agents ── -->
+      <div class="md:col-span-3 bg-surface-container-lowest rounded-xl shadow-sm border border-outline-variant overflow-hidden flex flex-col">
+        <div class="bg-surface-container-highest p-4 text-center font-semibold text-[17px] text-on-surface">My Agents</div>
+        <div class="flex-grow p-6 flex items-center justify-center" style="background:linear-gradient(to bottom,#e3dfff,#fff);">
+          <img alt="Agent" class="w-32 h-32 rounded-full border-4 border-white shadow-md object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBSZ0bI828NZVbPiEtlxhPRqlaNXwgiC0RN3djKsBTlPZDBw_DbA3l_wfy3rysGlGp7CdHkjDT4ICMeo2voIF2bqGUl0Abh0B5esH4kWHUuRV3fIcKbheF6rqMQXTxF8hHUtrFjyCO47jiJeuuSuBCIK8pidiyA6DEgwAOmm9gGiYw-3JA4j6NVHTkYer7SGEFf6B94NLH0Pq39c-rjNaDpyolvWyTt6nBpzx_WSAdIalLWT8OvBK_jW72QYYTas2X_lovGWCyRvosm">
+        </div>
+        <div class="bg-surface-container p-4 text-center text-3xl font-extrabold text-on-surface">5</div>
+      </div>
+    </div>
+
+    <!-- ── Services Section ── -->
+    <div class="bg-surface-container-lowest rounded-xl shadow-sm border border-outline-variant overflow-hidden">
+      <div class="px-4 sm:px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4" style="background:#7b7dfc;">
+        <div class="flex items-center gap-3 flex-wrap">
+          <span class="text-white font-semibold text-[22px]">Services</span>
+          <div class="relative">
+           <select class="appearance-none border border-white/30 rounded-lg px-3 py-1.5 pr-8 text-sm text-white outline-none cursor-pointer bg-white/15">
+              <option>Interview Panel</option>
+              <option>Counselling</option>
+              <option>Training</option>
+            </select>
+            <span class="material-symbols-outlined absolute right-2 top-1/2 -translate-y-1/2 text-white text-base pointer-events-none">expand_more</span>
+          </div>
+        </div>
+        <!-- Working date pickers -->
+        <div class="flex gap-2 flex-wrap">
+          <label class="date-btn">
+            <span class="material-symbols-outlined text-[18px]">calendar_month</span>
+            <span id="lbl-start">Start Date</span>
+            <input type="date" id="inp-start">
+          </label>
+          <label class="date-btn">
+            <span class="material-symbols-outlined text-[18px]">calendar_month</span>
+            <span id="lbl-end">End Date</span>
+            <input type="date" id="inp-end">
+          </label>
+        </div>
+      </div>
+
+      <div class="p-4 sm:p-6 lg:p-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Left -->
+        <div class="space-y-6">
+          <div class="flex items-center justify-between border-b border-outline-variant pb-4 flex-wrap gap-2">
+            <div>
+              <h4 class="font-semibold text-[17px] text-on-surface">Interview Panel</h4>
+              <p class="text-[14px] text-on-surface-variant">JD's Uploaded : <strong class="text-on-surface">104</strong></p>
+            </div>
+            <p class="text-[14px] text-on-surface-variant">CV's Uploaded : <strong class="text-on-surface">36</strong></p>
+          </div>
+          <div class="space-y-8 py-2">
+            <div class="flex items-center gap-3 sm:gap-4">
+              <span class="w-28 text-right text-[12px] font-semibold text-on-surface-variant flex-shrink-0">Interview Completed</span>
+              <div class="flex-grow flex items-center gap-3">
+                <div class="h-10 rounded-lg w-[45%]" style="background:#feb700;"></div>
+                <span class="text-white text-[10px] font-semibold px-2 py-0.5 rounded" style="background:#6b62e8;">15</span>
+              </div>
+            </div>
+            <div class="flex items-center gap-3 sm:gap-4">
+              <span class="w-28 text-right text-[12px] font-semibold text-on-surface-variant flex-shrink-0">Yet To Schedule</span>
+              <div class="flex-grow flex items-center gap-3">
+                <div class="h-10 rounded-lg w-[60%]" style="background:#7b7dfc;"></div>
+                <span class="text-white text-[10px] font-semibold px-2 py-0.5 rounded" style="background:#6b62e8;">20</span>
+              </div>
+            </div>
+            <div class="flex items-center gap-3 sm:gap-4">
+              <span class="w-28 text-right text-[12px] font-semibold text-on-surface-variant flex-shrink-0">Cancelled Interview</span>
+              <div class="flex-grow flex items-center gap-3">
+                <div class="h-10 rounded-lg w-[15%]" style="background:#ff8a65;"></div>
+                <span class="text-white text-[10px] font-semibold px-2 py-0.5 rounded" style="background:#6b62e8;">1</span>
+              </div>
+            </div>
+          </div>
+          <div class="flex flex-wrap gap-4 pt-2 text-[12px]">
+            <div class="flex items-center gap-2"><div class="w-3 h-3 rounded" style="background:#feb700;"></div><span class="text-on-surface-variant">Interview Completed : 15</span></div>
+            <div class="flex items-center gap-2"><div class="w-3 h-3 rounded" style="background:#7b7dfc;"></div><span class="text-on-surface-variant">Yet To Schedule : 20</span></div>
+            <div class="flex items-center gap-2"><div class="w-3 h-3 rounded" style="background:#ff8a65;"></div><span class="text-on-surface-variant">Cancelled Interview : 1</span></div>
+          </div>
+        </div>
+
+        <!-- Right — Outcome Donut -->
+        <div class="border-t lg:border-t-0 lg:border-l border-outline-variant pt-6 lg:pt-0 lg:pl-6 flex flex-col items-center">
+          <h4 class="font-semibold text-[17px] text-on-surface mb-6 self-start">Interview Completed Outcome : 15</h4>
+          <div class="relative" style="width:220px;height:220px;overflow:visible;">
+            <svg id="outcome-pie" viewBox="0 0 220 220" width="220" height="220" style="overflow:visible;display:block;"></svg>
+            <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+              <div style="width:100px;height:100px;background:#fff;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;">
+                <span id="out-cv" style="font-size:28px;font-weight:700;color:#181c20;line-height:1;">15</span>
+                <span id="out-cl" style="font-size:10px;color:#6f7880;margin-top:2px;text-align:center;padding:0 8px;">Total</span>
+              </div>
+            </div>
+            <div id="out-tip" class="ptip"></div>
+          </div>
+          <div class="grid grid-cols-2 gap-x-8 gap-y-2 mt-8 text-[12px] w-full max-w-xs">
+            <div class="flex items-center gap-2"><div class="w-3 h-3 rounded" style="background:#7b7dfc;"></div><span class="text-on-surface-variant">Selected : 8</span></div>
+            <div class="flex items-center gap-2"><div class="w-3 h-3 rounded" style="background:#00d2ff;"></div><span class="text-on-surface-variant">Conditions : 2</span></div>
+            <div class="flex items-center gap-2"><div class="w-3 h-3 rounded" style="background:#ff8a65;"></div><span class="text-on-surface-variant">Rejected : 3</span></div>
+            <div class="flex items-center gap-2"><div class="w-3 h-3 rounded" style="background:#ff5c5c;"></div><span class="text-on-surface-variant">Proxy : 2</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<!-- Mobile bottom nav -->
+<div class="md:hidden fixed bottom-0 w-full z-50 bg-surface-container shadow-lg border-t border-outline-variant flex justify-around items-center px-4 py-2 rounded-t-xl">
+  <a class="flex flex-col items-center bg-secondary-container text-on-secondary-container rounded-xl p-2" href="#">
+    <span class="material-symbols-outlined">home</span><span class="text-[11px] font-medium">Home</span>
+  </a>
+  <a class="flex flex-col items-center text-on-surface-variant p-2" href="#">
+    <span class="material-symbols-outlined">group</span><span class="text-[11px] font-medium">Agents</span>
+  </a>
+  <a class="flex flex-col items-center text-on-surface-variant p-2" href="#">
+    <span class="material-symbols-outlined">category</span><span class="text-[11px] font-medium">Services</span>
+  </a>
+  <a class="flex flex-col items-center text-on-surface-variant p-2" href="#">
+    <span class="material-symbols-outlined">receipt_long</span><span class="text-[11px] font-medium">Billing</span>
+  </a>
+</div>
+
+<script>
+  /* ── helpers ── */
+  const NS = 'http://www.w3.org/2000/svg';
+  function rad(d){ return d * Math.PI / 180; }
+  function slicePath(cx,cy,R,ri,a1,a2){
+    const large = (a2-a1)>180?1:0;
+    const x1=cx+R*Math.cos(rad(a1)), y1=cy+R*Math.sin(rad(a1));
+    const x2=cx+R*Math.cos(rad(a2)), y2=cy+R*Math.sin(rad(a2));
+    const x3=cx+ri*Math.cos(rad(a2)),y3=cy+ri*Math.sin(rad(a2));
+    const x4=cx+ri*Math.cos(rad(a1)),y4=cy+ri*Math.sin(rad(a1));
+    return `M${x1},${y1} A${R},${R},0,${large},1,${x2},${y2} L${x3},${y3} A${ri},${ri},0,${large},0,${x4},${y4} Z`;
+  }
+  function moveTip(tip, wrap, ev){
+    const r = wrap.getBoundingClientRect();
+    tip.style.left = (ev.clientX - r.left)+'px';
+    tip.style.top  = (ev.clientY - r.top)+'px';
+  }
+  function buildDonut(svgId, data, total, cx, cy, R, ri, tipId, cvId, clId, defLbl){
+    const svg  = document.getElementById(svgId);
+    const tip  = document.getElementById(tipId);
+    const cv   = document.getElementById(cvId);
+    const cl   = document.getElementById(clId);
+    const wrap = tip.parentElement;
+    const GAP  = 1.4;
+    let start  = -90;
+    data.forEach(seg => {
+      const deg = (seg.value / total) * 360;
+      const a1  = start + GAP/2;
+      const a2  = start + deg - GAP/2;
+      const p   = document.createElementNS(NS, 'path');
+      p.setAttribute('d', slicePath(cx, cy, R, ri, a1, a2));
+      p.setAttribute('fill', seg.color);
+      p.style.cursor = 'pointer';
+      p.style.transition = 'transform .18s ease';
+      p.style.transformOrigin = cx+'px '+cy+'px';
+      p.addEventListener('mouseenter', ev => {
+        p.setAttribute('fill', seg.hover);
+        p.style.transform = 'scale(1.07)';
+        cv.textContent = seg.value;
+        cl.textContent = seg.label;
+        tip.textContent = seg.label+': '+seg.value;
+        moveTip(tip, wrap, ev);
+        tip.style.opacity = '1';
+      });
+      p.addEventListener('mousemove', ev => moveTip(tip, wrap, ev));
+      p.addEventListener('mouseleave', () => {
+        p.setAttribute('fill', seg.color);
+        p.style.transform = 'scale(1)';
+        cv.textContent = total;
+        cl.textContent = defLbl;
+        tip.style.opacity = '0';
+      });
+      svg.appendChild(p);
+      start += deg;
+    });
+  }
+
+  /* ── Requirements donut ── */
+  buildDonut('req-pie', [
+    { label:'Accepted',    value:7, color:'#7b7dfc', hover:'#a5a7fd' },
+    { label:'In Progress', value:2, color:'#feb700', hover:'#ffd05c' },
+    { label:'Rejected',    value:1, color:'#ff5c5c', hover:'#ff8f8f' },
+  ], 10, 100, 100, 88, 52, 'req-tip', 'req-cv', 'req-cl', 'Total');
+
+  /* ── Outcome donut ── */
+  buildDonut('outcome-pie', [
+    { label:'Selected',   value:8, color:'#7b7dfc', hover:'#a5a7fd' },
+    { label:'Rejected',   value:3, color:'#ff8a65', hover:'#ffaa8f' },
+    { label:'Conditions', value:2, color:'#00d2ff', hover:'#5de3ff' },
+    { label:'Proxy',      value:2, color:'#ff5c5c', hover:'#ff8f8f' },
+  ], 15, 110, 110, 90, 52, 'out-tip', 'out-cv', 'out-cl', 'Total');
+
+  /* ── Sidebar ── */
+  const sidebar   = document.getElementById('sidebar');
+  const mc        = document.getElementById('main-content');
+  const hdr       = document.getElementById('top-header');
+  const mobOvl    = document.getElementById('mob-overlay');
+  const tabOvl    = document.getElementById('tab-overlay');
+  let collapsed   = false;
+  let svcOpen     = false;
+
+  function isTablet(){
+    return window.innerWidth >= 768 && window.innerWidth <= 1024;
+  }
+
+  /* Desktop sidebar toggle */
+  document.getElementById('sidebar-toggle').addEventListener('click', () => {
+    if (isTablet()) {
+      // On tablet, sidebar-toggle opens/closes the tab-open overlay sidebar
+      const opening = !sidebar.classList.contains('tab-open');
+      sidebar.classList.toggle('tab-open', opening);
+      tabOvl.classList.toggle('show', opening);
+      if (!opening) closeSvc();
+      return;
+    }
+    collapsed = !collapsed;
+    sidebar.classList.toggle('collapsed', collapsed);
+    mc.classList.toggle('sc', collapsed);
+    hdr.classList.toggle('sc', collapsed);
+    if (collapsed) closeSvc();
+  });
+
+  /* Mobile hamburger */
+  document.getElementById('mob-menu-btn').addEventListener('click', () => {
+    sidebar.classList.add('mob-open');
+    mobOvl.classList.add('show');
+  });
+  mobOvl.addEventListener('click', () => {
+    sidebar.classList.remove('mob-open');
+    mobOvl.classList.remove('show');
+  });
+
+  /* Tablet overlay closes sidebar */
+  tabOvl.addEventListener('click', () => {
+    sidebar.classList.remove('tab-open');
+    tabOvl.classList.remove('show');
+    closeSvc();
+  });
+
+  window.addEventListener('resize', () => {
+    if (!isTablet()) {
+      tabOvl.classList.remove('show');
+      sidebar.classList.remove('tab-open');
+    }
+  });
+
+  /* ── Services dropdown ── */
+  function toggleSvc(){
+    // On tablet: if sidebar not expanded, expand first then show submenu
+    if (isTablet()) {
+      if (!sidebar.classList.contains('tab-open')) {
+        sidebar.classList.add('tab-open');
+        tabOvl.classList.add('show');
+        // Open submenu after expanding
+        svcOpen = true;
+        document.getElementById('svc-dd').classList.add('open');
+        document.getElementById('svc-arrow').classList.add('open');
+        return;
+      }
+    } else {
+      if (collapsed) return;
+    }
+    svcOpen = !svcOpen;
+    document.getElementById('svc-dd').classList.toggle('open', svcOpen);
+    document.getElementById('svc-arrow').classList.toggle('open', svcOpen);
+  }
+  function closeSvc(){
+    svcOpen = false;
+    document.getElementById('svc-dd').classList.remove('open');
+    document.getElementById('svc-arrow').classList.remove('open');
+  }
+
+  /* ── Date pickers ── */
+  function fmtDate(val){
+    if(!val) return null;
+    const d = new Date(val+'T00:00:00');
+    return d.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
+  }
+  document.getElementById('inp-start').addEventListener('change', function(){
+    document.getElementById('lbl-start').textContent = fmtDate(this.value) || 'Start Date';
+  });
+  document.getElementById('inp-end').addEventListener('change', function(){
+    document.getElementById('lbl-end').textContent = fmtDate(this.value) || 'End Date';
+  });
+</script>
+</body>
+</html>
